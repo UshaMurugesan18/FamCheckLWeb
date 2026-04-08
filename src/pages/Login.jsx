@@ -41,11 +41,13 @@ export default function Login() {
       await loginWithEmail(email.trim(), password);
       navigate('/redirect', { replace: true });
     } catch (err) {
-      console.error(err);
+      console.error('Email login error code:', err.code, err.message);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Check your internet connection.');
       } else {
-        setError('Sign-in failed. Please try again.');
+        setError('Sign-in failed: ' + (err.code || err.message));
       }
     } finally {
       setLoading(false);
