@@ -228,9 +228,19 @@ function ReceiverTrackerCard({ trackerDays, alarmUnlocked, onAlarm }) {
 
 // ── Single Assignment Card ──────────────────────────────────────────────────
 function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, allAssignments, embedded }) {
+  const TASKS_KEY = `fc_tasks_${initAssignment.id}`;
+
+  // Load tasks from cache synchronously — no loading flash
+  function getCachedTasks() {
+    try {
+      const c = localStorage.getItem(TASKS_KEY);
+      return c ? JSON.parse(c) : [];
+    } catch (_) { return []; }
+  }
+
   const [assignment, setAssignment] = useState(initAssignment);
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [tasks, setTasks] = useState(getCachedTasks);
+  const [loadingTasks, setLoadingTasks] = useState(tasks.length === 0); // only show spinner if nothing cached
   const [expanded, setExpanded] = useState(true);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -243,7 +253,10 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
 
   useEffect(() => {
     getAssignmentTasks(assignment.id)
-      .then(setTasks)
+      .then((t) => {
+        try { localStorage.setItem(TASKS_KEY, JSON.stringify(t)); } catch (_) {}
+        setTasks(t);
+      })
       .finally(() => setLoadingTasks(false));
   }, [assignment.id]);
 
@@ -682,36 +695,51 @@ export default function ReceiverHome() {
 
   useEffect(() => {
     const today = todayStr();
-    // Show assignments from the last 3 days to handle UTC offset and timezone issues
     const d2 = new Date(); d2.setDate(d2.getDate() - 1);
     const yesterday = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
     const d3 = new Date(); d3.setDate(d3.getDate() - 2);
     const twoDaysAgo = `${d3.getFullYear()}-${String(d3.getMonth()+1).padStart(2,'0')}-${String(d3.getDate()).padStart(2,'0')}`;
 
-    const unsub = subscribeToAssignmentsByMember(memberId, (all) => {
-      const active = all.filter(
+    const CACHE_KEY = `fc_assignments_${memberId}`;
+
+    function filterActive(all) {
+      return all.filter(
         (a) =>
           [STATES.ASSIGNED, STATES.SNOOZED, STATES.COMPLETED, STATES.APPROVED, STATES.DENIED].includes(a.state) &&
           (
-            // Tracker: show ALL days of the tracker group
             a.assignType === 'tracker' ||
-            // Daily: today, yesterday, or 2 days ago (handles UTC offset + any timezone drift)
             a.assignedDate === today ||
             a.assignedDate === yesterday ||
             a.assignedDate === twoDaysAgo ||
-            // Weekly: active range
             (a.weekStart && a.weekEnd && a.weekStart <= today && a.weekEnd >= today)
           )
       );
+    }
+
+    // ── Show cached data INSTANTLY — no loading wait ──
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { active, all } = JSON.parse(cached);
+        setAssignments(active);
+        setAllAssignments(all);
+        setLoading(false);
+        initialLoadDone.current = true;
+      }
+    } catch (_) {}
+
+    const unsub = subscribeToAssignmentsByMember(memberId, (all) => {
+      const active = filterActive(all);
       setAssignments(active);
       setAllAssignments(all);
-      scheduleAlarms(active); // schedule phone alarms for active assignments
+      scheduleAlarms(active);
+      // Save to cache for next open
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ active, all })); } catch (_) {}
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
       }
     }, () => {
-      // On error, clear loading so we don't show infinite spinner
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
