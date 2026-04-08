@@ -655,15 +655,22 @@ export default function ReceiverHome() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When user TAPS the notification — speak immediately (native TTS, no gesture needed)
+  // When user TAPS the notification — speak immediately using notification's own data (no race condition)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let handle;
-    LocalNotifications.addListener('localNotificationActionPerformed', () => {
+    LocalNotifications.addListener('localNotificationActionPerformed', (notifAction) => {
+      // Prefer popup task list if already shown; otherwise speak from notification extra data
       const popup = alarmPopupRef.current;
       if (popup) {
         const { assignment, pendingTasks } = popup;
         speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+      } else {
+        // App was in background — popup not loaded yet, use data embedded in notification
+        const extra = notifAction?.notification?.extra || {};
+        const name = extra.memberName || 'there';
+        const group = extra.groupName || 'your tasks';
+        speak(`Hi ${name}, time to complete your ${group} tasks.`);
       }
     }).then((h) => { handle = h; });
     return () => { handle?.remove(); };

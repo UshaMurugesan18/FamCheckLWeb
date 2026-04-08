@@ -214,11 +214,11 @@ export async function scheduleAlarms(assignments) {
           notifications.push({
             id: notifId,
             title: `🔔 ${a.groupName}`,
-            body: `Hi ${a.memberName}! Time to complete your tasks.`,
+            body: `Hi ${a.memberName}! Time to complete your ${a.groupName} tasks.`,
             schedule: { at: fireAt, allowWhileIdle: true },
-            sound: null,
+            sound: 'default',
             actionTypeId: '',
-            extra: { memberId: a.memberId },
+            extra: { memberId: a.memberId, memberName: a.memberName, groupName: a.groupName },
           });
         }
         slot += interval;
