@@ -96,9 +96,12 @@ export const toggleAssignmentTask = (taskId, completed) =>
   api(`/api/assignments/tasks/${taskId}/toggle`, { method: "PATCH", body: JSON.stringify({ completed }) });
 
 // ── Real-time subscriptions via SSE (replaces onSnapshot) ───────────────────
-export function subscribeToAssignmentsByMember(memberId, callback) {
+export function subscribeToAssignmentsByMember(memberId, callback, onError) {
   // Initial load
-  getAssignmentsByMember(memberId).then(callback).catch(console.error);
+  getAssignmentsByMember(memberId).then(callback).catch((e) => {
+    console.error(e);
+    if (onError) onError(e);
+  });
 
   // Poll every 30s instead of SSE (SSE on Railway/mobile is unreliable)
   const intervalId = setInterval(() => {

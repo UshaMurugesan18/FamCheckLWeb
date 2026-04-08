@@ -567,6 +567,7 @@ export default function ReceiverHome() {
   const [assignments, setAssignments] = useState([]);
   const [allAssignments, setAllAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const initialLoadDone = useRef(false);
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
 
@@ -659,7 +660,16 @@ export default function ReceiverHome() {
       );
       setAssignments(active);
       setAllAssignments(all);
-      setLoading(false);
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
+    }, () => {
+      // On error, clear loading so we don't show infinite spinner
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     });
     return () => unsub();
   }, [memberId]);
