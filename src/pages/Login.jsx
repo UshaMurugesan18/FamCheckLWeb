@@ -5,15 +5,14 @@ import { Capacitor } from '@capacitor/core';
 import styles from './Login.module.css';
 
 const isNative = Capacitor.isNativePlatform();
-
 export default function Login() {
-  const { loginWithGoogle, loginWithEmail } = useAuth();
+  const { loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  const [isRegister, setIsRegister] = useState(false);
   async function handleGoogle() {
     setError('');
     setLoading(true);
@@ -36,18 +35,25 @@ export default function Login() {
     e.preventDefault();
     setError('');
     if (!email.trim() || !password.trim()) { setError('Enter email and password.'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
     try {
-      await loginWithEmail(email.trim(), password);
+      if (isRegister) {
+        await registerWithEmail(email.trim(), password);
+      } else {
+        await loginWithEmail(email.trim(), password);
+      }
       navigate('/redirect', { replace: true });
     } catch (err) {
       console.error('Email login error code:', err.code, err.message);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Account already exists. Switch to Sign In.');
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Check your internet connection.');
       } else {
-        setError('Sign-in failed: ' + (err.code || err.message));
+        setError('Failed: ' + (err.code || err.message));
       }
     } finally {
       setLoading(false);
@@ -93,21 +99,21 @@ export default function Login() {
           <input
             className={styles.input}
             type="password"
-            placeholder="Password"
+            placeholder="Password (min 6 chars)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
             disabled={loading}
           />
           <button className={styles.emailBtn} type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in with Email'}
+            {loading ? (isRegister ? 'Registering…' : 'Signing in…') : (isRegister ? 'Register' : 'Sign in with Email')}
           </button>
         </form>
 
         {error && <p className={styles.error}>{error}</p>}
 
-        <p className={styles.note}>
-          New here? Sign in with Google — the app will guide you to set up your family.
+        <p className={styles.note} style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => { setIsRegister(!isRegister); setError(''); }}>
+          {isRegister ? 'Already have an account? Sign In' : 'New user? Register here'}
         </p>
       </div>
     </div>
