@@ -27,22 +27,19 @@ jobs:
       - name: Sync Capacitor to Android
         run: npx cap sync android
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Make Gradle executable
         run: chmod +x android/gradlew
 
-      - name: Clear Gradle JAR cache (prevents BouncyCastle instrumentation failure)
-        run: rm -rf ~/.gradle/caches/jars-*
-
       - name: Build debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --no-build-cache
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
