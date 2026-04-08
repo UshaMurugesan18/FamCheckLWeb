@@ -820,7 +820,7 @@ export default function ReceiverHome() {
 
   return (
     <div className={styles.container}>
-      <AlarmPopup popup={alarmPopup} onSnooze={handlePopupSnooze} onClose={handlePopupClose} onSpeak={handlePopupSpeak} />
+      <AlarmPopup popup={alarmPopup} onSnooze={handlePopupSnooze} onClose={handlePopupClose} />
       <div className={styles.pageHeader}>
         <h2 className={styles.pageTitle}>My Tasks</h2>
         <p className={styles.pageSubtitle}>Tap a group to expand</p>
