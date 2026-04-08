@@ -100,12 +100,12 @@ export function subscribeToAssignmentsByMember(memberId, callback) {
   // Initial load
   getAssignmentsByMember(memberId).then(callback).catch(console.error);
 
-  const es = new EventSource(`${BASE_URL}/api/sse/member/${memberId}`);
-  es.addEventListener("update", () => {
+  // Poll every 30s instead of SSE (SSE on Railway/mobile is unreliable)
+  const intervalId = setInterval(() => {
     getAssignmentsByMember(memberId).then(callback).catch(console.error);
-  });
-  es.onerror = () => es.close();
-  return () => es.close(); // unsubscribe
+  }, 30000);
+
+  return () => clearInterval(intervalId);
 }
 
 export function subscribeToAssignmentsByFamily(familyId, callback) {

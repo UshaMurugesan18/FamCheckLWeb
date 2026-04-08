@@ -561,9 +561,10 @@ export default function ReceiverHome() {
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
 
-  // Register for background push notifications
+  // Register for background push notifications (delayed so it doesn't block initial render)
   useEffect(() => {
-    registerPushSubscription(memberId);
+    const t = setTimeout(() => registerPushSubscription(memberId), 3000);
+    return () => clearTimeout(t);
   }, [memberId]);
 
   function unlockVoice() {
