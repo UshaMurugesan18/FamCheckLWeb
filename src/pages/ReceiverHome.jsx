@@ -50,10 +50,19 @@ function isPastDeadline(timeEnd) {
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-IN';
-  utt.rate = 0.9;
-  window.speechSynthesis.speak(utt);
+  // Small delay so cancel() completes before new utterance starts
+  setTimeout(() => {
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 0.85;
+    utt.volume = 1;
+    // Use en-IN if available, otherwise fall back to any English voice or default
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find((v) => v.lang === 'en-IN')
+      || voices.find((v) => v.lang.startsWith('en'))
+      || null;
+    if (preferred) utt.voice = preferred;
+    window.speechSynthesis.speak(utt);
+  }, 100);
 }
 
 const GROUP_ICONS = {
@@ -605,13 +614,10 @@ export default function ReceiverHome() {
   }
 
   async function handlePopupSnooze(popup) {
-    unlockVoice();
-    if (popup && window.speechSynthesis) {
-      const { assignment, pendingTasks } = popup;
-      speak(`Hi ${assignment.memberName}, snoozed. Please complete: ${pendingTasks.map((t) => t.taskName).join(', ')} soon.`);
-    }
+    const { assignment, pendingTasks } = popup;
     setAlarmPopup(null);
-    const { assignment } = popup;
+    unlockVoice();
+    speak(`Hi ${assignment.memberName}, snoozed. Please complete: ${pendingTasks.map((t) => t.taskName).join(', ')} soon.`);
     const newCount = (assignment.snoozeCount || 0) + 1;
     if (newCount <= MAX_SNOOZES) {
       await snoozeAssignment(assignment.id, newCount);
@@ -619,12 +625,13 @@ export default function ReceiverHome() {
   }
 
   function handlePopupClose() {
+    const popup = alarmPopup;
+    setAlarmPopup(null);
     unlockVoice();
-    if (alarmPopup && window.speechSynthesis) {
-      const { assignment, pendingTasks } = alarmPopup;
+    if (popup) {
+      const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, please complete: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
     }
-    setAlarmPopup(null);
   }
 
   useEffect(() => {
