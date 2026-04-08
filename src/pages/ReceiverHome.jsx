@@ -220,7 +220,7 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
   const [assignment, setAssignment] = useState(initAssignment);
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
