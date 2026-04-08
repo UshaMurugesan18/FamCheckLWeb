@@ -82,7 +82,7 @@ function compressImage(file, maxWidth, quality) {
 }
 
 // ── Alarm Popup Overlay ────────────────────────────────────────────────────
-function AlarmPopup({ popup, onSnooze, onClose }) {
+function AlarmPopup({ popup, onSnooze, onClose, onSpeak }) {
   if (!popup) return null;
   const { assignment, pendingTasks } = popup;
   const snoozesLeft = MAX_SNOOZES - (assignment.snoozeCount || 0);
@@ -102,6 +102,9 @@ function AlarmPopup({ popup, onSnooze, onClose }) {
           ))}
         </div>
         <div className={styles.popupActions}>
+          <button className={styles.popupSpeak} onClick={() => onSpeak(popup)}>
+            🔊 Read aloud
+          </button>
           {snoozesLeft > 0 && (
             <button className={styles.popupSnooze} onClick={() => onSnooze(popup)}>
               😴 Snooze {assignment.alarmInterval || 5} min ({snoozesLeft} left)
@@ -225,6 +228,7 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
   const [error, setError] = useState('');
   const fileRef = useRef(null);
   const alarmRef = useRef(null);
+  const alarmFiredRef = useRef(false); // prevent re-firing after dismiss
 
   useEffect(() => {
     getAssignmentTasks(assignment.id)
@@ -239,19 +243,17 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
     // Weekly: only deny if the entire week has passed
     if (assignment.assignType === 'weekly') {
       if (!assignment.weekEnd || today <= assignment.weekEnd) return;
-      // Week is over — deny if not completed
       updateAssignmentState(assignment.id, STATES.DENIED)
         .then(() => setAssignment((a) => ({ ...a, state: STATES.DENIED })));
       return;
     }
-    // Tracker: only deny if this day's date is more than 1 day in the past
-    // (yesterday tolerance handles UTC-stored dates, e.g. stored as 04-06 when actual day is 04-07)
+    // Tracker: only deny if more than 1 day in the past
     if (assignment.assignType === 'tracker') {
       if (!assignment.assignedDate) return;
       const d = new Date();
       d.setDate(d.getDate() - 1);
       const yesterday = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (assignment.assignedDate >= yesterday) return; // today or yesterday → still active
+      if (assignment.assignedDate >= yesterday) return;
       if (isPastDeadline(assignment.timeEnd)) {
         updateAssignmentState(assignment.id, STATES.DENIED)
           .then(() => setAssignment((a) => ({ ...a, state: STATES.DENIED })));
@@ -261,34 +263,33 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
     // Daily: never auto-deny on client side — server handles expiry
   }, [assignment]);
 
-  // Alarm
+  // Alarm — only depends on assignment+tasks, NOT alarmUnlocked
+  // Voice is triggered by user gesture in ReceiverHome, not here
   useEffect(() => {
+    alarmFiredRef.current = false; // reset on new assignment/tasks
     if (!assignment || !tasks.length) return;
     if (
       isInActiveWindow(assignment.timeStart, assignment.timeEnd) &&
       (assignment.state === STATES.ASSIGNED || assignment.state === STATES.SNOOZED)
     ) {
       const pending = tasks.filter((t) => !t.completed);
-      if (pending.length > 0) {
-        // Fire immediately on load/unlock
+      if (pending.length > 0 && !alarmFiredRef.current) {
+        alarmFiredRef.current = true;
         onAlarm({ assignment, pendingTasks: pending });
-        if (alarmUnlocked && assignment.voiceEnabled !== false) {
-          speak(`Hi ${assignment.memberName}, today you have to get ready these things: ${pending.map((t) => t.taskName).join(', ')}`);
-        }
         setAlarmActive(true);
+        setExpanded(true); // auto-expand card so tasks visible after popup closes
       }
       alarmRef.current = setInterval(() => {
         const p = tasks.filter((t) => !t.completed);
         if (p.length === 0) { clearInterval(alarmRef.current); return; }
+        alarmFiredRef.current = true;
         onAlarm({ assignment, pendingTasks: p });
-        if (alarmUnlocked && assignment.voiceEnabled !== false) {
-          speak(`Hi ${assignment.memberName}, please complete these pending things: ${p.map((t) => t.taskName).join(', ')}`);
-        }
         setAlarmActive(true);
+        setExpanded(true);
       }, (assignment.alarmInterval || 5) * 60 * 1000);
     }
     return () => clearInterval(alarmRef.current);
-  }, [assignment, tasks, alarmUnlocked]);
+  }, [assignment, tasks]); // ← removed alarmUnlocked to prevent popup re-firing
 
   async function handleToggle(task) {
     const newDone = !task.completed;
@@ -594,6 +595,14 @@ export default function ReceiverHome() {
     }
   }
 
+  function handlePopupSpeak(popup) {
+    unlockVoice();
+    if (popup && window.speechSynthesis) {
+      const { assignment, pendingTasks } = popup;
+      speak(`Hi ${assignment.memberName}, today you have to get ready these things: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+    }
+  }
+
   async function handlePopupSnooze(popup) {
     unlockVoice(); // first tap = user gesture → unlocks speech + notifications
     setAlarmPopup(null);
@@ -676,7 +685,7 @@ export default function ReceiverHome() {
 
   return (
     <div className={styles.container}>
-      <AlarmPopup popup={alarmPopup} onSnooze={handlePopupSnooze} onClose={handlePopupClose} />
+      <AlarmPopup popup={alarmPopup} onSnooze={handlePopupSnooze} onClose={handlePopupClose} onSpeak={handlePopupSpeak} />
       <div className={styles.pageHeader}>
         <h2 className={styles.pageTitle}>My Tasks</h2>
         <p className={styles.pageSubtitle}>Tap a group to expand</p>
