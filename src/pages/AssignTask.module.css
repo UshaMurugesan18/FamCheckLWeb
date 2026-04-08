@@ -1,0 +1,326 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem 6rem;
+  background: var(--color-bg);
+}
+.center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loadingText { color: var(--color-text-muted); }
+
+.back {
+  align-self: flex-start;
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+.header { text-align: center; margin-bottom: 1.5rem; }
+.groupIcon { font-size: 2.5rem; margin-bottom: 0.4rem; }
+.title { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.subtitle { font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.2rem; }
+
+.typeToggle {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  width: 100%;
+  max-width: 420px;
+}
+.typeBtn {
+  flex: 1;
+  padding: 0.7rem;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow);
+  transition: all 0.15s;
+}
+.typeActive {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.datePicker {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.dateLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dateInput {
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 1rem;
+  color: var(--color-text);
+  box-shadow: var(--shadow);
+  outline: none;
+}
+.dateInput:focus { border-color: var(--color-primary); }
+
+.weekInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 420px;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-primary);
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 1.25rem;
+  justify-content: center;
+}
+.trackerRange {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-primary);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.trackerHint {
+  font-size: 0.88rem;
+  color: var(--color-primary);
+  text-align: center;
+}
+.trackerDates {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.voiceToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 420px;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+}
+.voiceLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.toggleBtn {
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.toggleOn {
+  background: var(--color-success);
+  color: #fff;
+}
+.toggleOff {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.alarmRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 420px;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.alarmLabel {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+.alarmBtns {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.alarmBtn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+.alarmActive {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.timePicker {  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 1.25rem;
+}
+
+.timeField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.section { width: 100%; max-width: 420px; }
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.sectionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.selectAllBtn {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.taskList { display: flex; flex-direction: column; gap: 0.65rem; }
+.taskCard {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow);
+  text-align: left;
+  transition: all 0.15s;
+}
+.taskCard:active { transform: scale(0.97); }
+.taskSelected { border-color: var(--color-primary); background: #eef0fd; }
+.checkbox { font-size: 1.2rem; flex-shrink: 0; }
+.taskName { font-size: 1rem; font-weight: 600; color: var(--color-text); }
+
+.addTaskBtn {
+  margin-top: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 2px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.addTaskBtn:active { background: #eef0fd; border-color: var(--color-primary); }
+
+.addTaskRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+.addTaskInput {
+  flex: 1;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-primary);
+  background: var(--color-surface);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  outline: none;
+  box-shadow: var(--shadow);
+}
+.addTaskSave {
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.addTaskSave:disabled { opacity: 0.5; }
+.addTaskCancel {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-danger);
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1.5px solid var(--color-border);
+  box-shadow: var(--shadow);
+}
+
+.error {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: var(--color-danger);
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+}
+
+.assignBtn {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.9rem 2.5rem;
+  border-radius: 50px;
+  box-shadow: 0 4px 16px rgba(79,99,210,0.3);
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.assignBtn:disabled { opacity: 0.55; }

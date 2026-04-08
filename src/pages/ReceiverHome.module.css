@@ -1,0 +1,582 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 4rem;
+  background: var(--color-bg);
+}
+.center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+.noTask {
+  text-align: center;
+  padding: 2rem;
+}
+.noTaskIcon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+.noTask h2 { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.noTask p { color: var(--color-text-muted); margin-top: 0.4rem; }
+.loadingText { color: var(--color-text-muted); }
+
+/* Page header */
+.pageHeader {
+  width: 100%;
+  max-width: 480px;
+  padding: 1.5rem 1.25rem 0.75rem;
+}
+
+.unlockBanner {
+  width: 100%;
+  background: #fef08a;
+  border-bottom: 2px solid #eab308;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #78350f;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+.pageTitle { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.pageSubtitle { font-size: 0.85rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+
+/* Card list */
+.cardList {
+  width: 100%;
+  max-width: 480px;
+  padding: 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ── Receiver Tracker Card ─────────────────────────────────── */
+.receiverTrackerCard {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 2px solid var(--color-primary);
+  overflow: hidden;
+}
+.receiverTrackerHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.receiverTrackerIcon { font-size: 2rem; flex-shrink: 0; }
+.receiverTrackerInfo { flex: 1; }
+.receiverTrackerTitle { font-size: 1rem; font-weight: 700; color: var(--color-text); display: block; }
+.receiverTrackerSub { font-size: 0.78rem; color: var(--color-primary); font-weight: 600; }
+.receiverTrackerPct { font-size: 1.2rem; font-weight: 800; color: #16a34a; }
+.rtProgressWrap { padding: 0 1rem 0.75rem; }
+.rtProgressBar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+.rtProgressFill { height: 100%; background: #22c55e; border-radius: 99px; transition: width 0.4s; }
+.rtRows { display: flex; flex-direction: column; }
+.rtRow {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.rtRowLeft { display: flex; flex-direction: column; flex: 1; }
+.rtRowDay { font-size: 0.9rem; font-weight: 700; color: var(--color-text); }
+.rtTodayBadge {
+  display: inline-block; font-size: 0.62rem; font-weight: 700;
+  background: var(--color-primary); color: #fff;
+  border-radius: 99px; padding: 0.05rem 0.4rem; margin-left: 0.35rem;
+  vertical-align: middle;
+}
+.rtFutureBadge {
+  display: inline-block; font-size: 0.62rem; font-weight: 600;
+  background: #e2e8f0; color: #64748b;
+  border-radius: 99px; padding: 0.05rem 0.4rem; margin-left: 0.35rem;
+  vertical-align: middle;
+}
+.rtRowDate { font-size: 0.72rem; color: var(--color-text-muted); }
+.rtRowStatus { font-size: 0.78rem; font-weight: 700; }
+
+/* Embedded task body (inside tracker row) */
+.embeddedBody {
+  padding: 0.75rem 1rem 1rem;
+  background: #f8fafc;
+  border-top: 1.5px dashed var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Assignment card */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1.5px solid var(--color-border);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  width: 100%;
+  text-align: left;
+}
+.cardIcon { font-size: 1.75rem; flex-shrink: 0; }
+.cardMeta { display: flex; flex-direction: column; flex: 1; gap: 0.1rem; }
+.cardTitle { font-size: 1rem; font-weight: 700; color: var(--color-text); }
+.trackerBadge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 99px;
+  padding: 0.05rem 0.45rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* Tracker day strip inside expanded card */
+.trackerStrip {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.25rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  justify-content: center;
+}
+.trackerDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.trackerDotCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.trackerDotLabel {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.cardTime { font-size: 0.78rem; color: var(--color-text-muted); }
+.cardProgress { font-size: 0.78rem; color: var(--color-primary); font-weight: 600; }
+.cardBadge { font-size: 0.75rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.chevron { font-size: 0.75rem; color: var(--color-text-muted); flex-shrink: 0; }
+
+/* Alarm strip */
+.alarmStrip {
+  background: #fef08a;
+  border-top: 1px solid #eab308;
+  padding: 0.5rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #78350f;
+}
+.snoozeBtn {
+  background: #eab308;
+  color: #fff;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Card body */
+.cardBody {
+  border-top: 1.5px solid var(--color-border);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+.progressText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-width: 2.5rem;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.taskCard {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-border);
+  text-align: left;
+  transition: all 0.15s;
+}
+.taskCard:active { transform: scale(0.97); }
+.taskCard:disabled { opacity: 0.75; cursor: default; }
+.taskDone {
+  border-color: var(--color-success);
+  background: #f0fdf4;
+}
+.taskCheck { font-size: 1.2rem; flex-shrink: 0; }
+.taskName { font-size: 0.95rem; font-weight: 600; color: var(--color-text); }
+
+/* Photo */
+.photoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.photoLabel {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.photoBtn {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 2px dashed var(--color-primary);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.photoPreview {
+  width: 100%;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-height: 200px;
+  object-fit: cover;
+}
+
+.error {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  background: var(--color-success);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.25);
+  transition: opacity 0.15s;
+}
+.submitBtn:disabled { opacity: 0.55; }
+
+.doneMsg {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-success);
+  padding: 0.25rem 0;
+}
+.center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+.noTask {
+  text-align: center;
+  padding: 2rem;
+}
+.noTaskIcon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+.noTask h2 { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.noTask p { color: var(--color-text-muted); margin-top: 0.4rem; }
+
+/* ── Alarm Popup Overlay ───────────────────────────────────────────────── */
+.popupOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.popupBox {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem 1.5rem 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: slideUp 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.popupIcon { font-size: 3rem; }
+.popupTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1e293b;
+  text-align: center;
+}
+.popupGroup {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.popupTaskList {
+  width: 100%;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.popupTask {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+.popupActions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.popupSnooze {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: #eab308;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(234,179,8,0.35);
+}
+.popupClose {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Alarm banner */
+.alarmBanner {
+  width: 100%;
+  background: #fef08a;
+  border-bottom: 2px solid #eab308;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #78350f;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.snoozeBtn {
+  background: #eab308;
+  color: #fff;
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header {
+  text-align: center;
+  padding: 1.75rem 1.25rem 1rem;
+  width: 100%;
+}
+.groupIcon { font-size: 2.5rem; margin-bottom: 0.4rem; }
+.title { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.subtitle { font-size: 0.88rem; color: var(--color-text-muted); margin-top: 0.2rem; }
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  width: 100%;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+.progressText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-width: 2.5rem;
+}
+
+.taskList {
+  width: 100%;
+  max-width: 480px;
+  padding: 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.taskCard {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 2px solid var(--color-border);
+  text-align: left;
+  transition: all 0.15s;
+}
+.taskCard:active { transform: scale(0.97); }
+.taskDone {
+  border-color: var(--color-success);
+  background: #f0fdf4;
+}
+.taskCheck { font-size: 1.3rem; flex-shrink: 0; }
+.taskName { font-size: 1rem; font-weight: 600; color: var(--color-text); }
+
+/* Photo */
+.photoSection {
+  width: 100%;
+  max-width: 480px;
+  padding: 1.25rem 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.photoLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.photoBtn {
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 2px dashed var(--color-primary);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.photoPreview {
+  width: 100%;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-height: 240px;
+  object-fit: cover;
+}
+
+.error {
+  width: 100%;
+  max-width: 480px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.88rem;
+  color: var(--color-danger);
+  background: #fef2f2;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.submitBtn {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-success);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.9rem 2.5rem;
+  border-radius: 50px;
+  box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.submitBtn:disabled { opacity: 0.55; }

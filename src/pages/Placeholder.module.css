@@ -1,0 +1,40 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  background: var(--color-bg);
+  position: relative;
+}
+
+.back {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+}
+
+.icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.note {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}

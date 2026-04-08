@@ -1,0 +1,382 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem 3rem;
+  background: var(--color-bg);
+}
+.center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+.back {
+  align-self: flex-start;
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+.header { text-align: center; margin-bottom: 1.75rem; }
+.icon { font-size: 2.5rem; margin-bottom: 0.4rem; }
+.title { font-size: 1.4rem; font-weight: 700; color: var(--color-text); }
+.subtitle { font-size: 0.88rem; color: var(--color-text-muted); margin-top: 0.2rem; }
+.empty { color: var(--color-text-muted); margin-top: 2rem; }
+
+/* ── Daily Tracker Card ─────────────────────────────────────────────── */
+.trackerCard {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 2px solid var(--color-primary);
+  overflow: hidden;
+}
+.trackerCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1rem 0.75rem;
+}
+.trackerAvatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--color-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
+}
+.trackerInfo { flex: 1; }
+.trackerMember { font-weight: 700; font-size: 1rem; color: var(--color-text); }
+.trackerGroup { font-size: 0.8rem; color: var(--color-primary); font-weight: 600; margin-top: 0.1rem; }
+.trackerDateRange { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.1rem; }
+.trackerScoreBadge {
+  display: flex; flex-direction: column; align-items: center;
+  background: #f0fdf4; border-radius: 10px; padding: 0.4rem 0.7rem;
+  border: 1.5px solid #4ade80;
+}
+.trackerScoreNum { font-size: 1.2rem; font-weight: 800; color: #16a34a; line-height: 1; }
+.trackerScoreLabel { font-size: 0.65rem; color: #16a34a; font-weight: 600; }
+
+/* Progress bar */
+.trackerProgressWrap {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0 1rem 0.75rem;
+}
+.trackerProgressBar {
+  flex: 1; height: 10px; background: #e2e8f0;
+  border-radius: 99px; overflow: hidden;
+}
+.trackerProgressFill {
+  height: 100%; background: #22c55e;
+  border-radius: 99px; transition: width 0.4s ease;
+}
+.trackerProgressPct { font-size: 0.8rem; font-weight: 700; color: #16a34a; min-width: 2.5rem; text-align: right; }
+
+/* Legend */
+.trackerLegend {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.4rem 1rem 0.6rem;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: #f8fafc;
+}
+.trackerLegend span { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+
+/* Day rows */
+.trackerRows { display: flex; flex-direction: column; }
+.trackerRow {
+  display: flex; align-items: center;
+  gap: 0.75rem; padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.trackerRow:last-child { border-bottom: none; }
+.trackerRowLeft { display: flex; flex-direction: column; flex: 1; }
+.trackerRowDay { font-size: 0.9rem; font-weight: 700; color: var(--color-text); }
+.todayBadge {
+  display: inline-block; font-size: 0.65rem; font-weight: 700;
+  background: var(--color-primary); color: #fff;
+  border-radius: 99px; padding: 0.05rem 0.4rem; margin-left: 0.35rem;
+  vertical-align: middle;
+}
+.trackerRowDate { font-size: 0.75rem; color: var(--color-text-muted); }
+.trackerRowStatus { font-size: 0.78rem; font-weight: 700; min-width: 4.5rem; text-align: right; }
+.trackerApproveBtn {
+  font-size: 0.78rem; font-weight: 700;
+  background: #22c55e; color: #fff;
+  border-radius: 8px; padding: 0.35rem 0.7rem;
+  white-space: nowrap; flex-shrink: 0;
+}
+.trackerDenyBtn {
+  font-size: 0.78rem; font-weight: 700;
+  background: #fee2e2; color: #dc2626;
+  border-radius: 8px; padding: 0.35rem 0.7rem;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.list {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1.5px solid var(--color-border);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem;
+  width: 100%;
+  text-align: left;
+  gap: 0.75rem;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f63d2, #22c55e);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.memberName { font-size: 0.95rem; font-weight: 700; color: var(--color-text); }
+.memberEmail { font-size: 0.78rem; color: var(--color-primary); margin-top: 0.1rem; }
+.groupName { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.1rem; }
+.dateRow { font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.1rem; }
+
+.stateBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.expanded {
+  border-top: 1.5px solid var(--color-border);
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.taskList { display: flex; flex-direction: column; gap: 0.4rem; }
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+}
+.tName { color: var(--color-text); font-weight: 500; }
+
+.photoWrap { display: flex; flex-direction: column; gap: 0.4rem; }
+.photoLabel { font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); }
+.photo {
+  width: 100%;
+  border-radius: 10px;
+  max-height: 220px;
+  object-fit: cover;
+  box-shadow: var(--shadow);
+}
+
+.actions { display: flex; gap: 0.75rem; }
+.approveBtn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--color-success);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: opacity 0.15s;
+}
+.approveBtn:disabled { opacity: 0.55; }
+.denyBtn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: opacity 0.15s;
+}
+.denyBtn:disabled { opacity: 0.55; }
+
+/* Meta row with edit/delete */
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.metaChip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+}
+.editBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  background: #eef0fd;
+  margin-left: auto;
+}
+.deleteBtn {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  background: #fee2e2;
+}
+.deleteBtn:disabled { opacity: 0.5; }
+
+/* Edit form */
+.editForm {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1.5px solid var(--color-primary);
+}
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.editField { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.editLabel { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+.editInput {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+.intervalBtns { display: flex; gap: 0.35rem; }
+.intervalBtn {
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+.intervalActive { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.toggleBtn { padding: 0.3rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+.toggleOn { background: var(--color-success); color: #fff; }
+.toggleOff { background: var(--color-border); color: var(--color-text-muted); }
+.editActions { display: flex; gap: 0.65rem; }
+.saveBtn {
+  flex: 1; padding: 0.65rem; border-radius: var(--radius);
+  background: var(--color-primary); color: #fff; font-size: 0.9rem; font-weight: 700;
+}
+.saveBtn:disabled { opacity: 0.55; }
+.cancelBtn {
+  padding: 0.65rem 1rem; border-radius: var(--radius);
+  background: var(--color-surface); border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted); font-size: 0.9rem;
+}
+
+/* Task editing inside edit form */
+.editTaskSection {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.editTaskList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.editTaskRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+}
+.editTaskName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+}
+.deleteTaskBtn {
+  font-size: 0.9rem;
+  color: var(--color-danger);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: #fef2f2;
+  flex-shrink: 0;
+}
+.addTaskRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.addTaskInput {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  font-size: 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.addTaskInput:focus { border-color: var(--color-primary); outline: none; }
+.addTaskBtn {
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  background: var(--color-success);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+

@@ -1,0 +1,123 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  padding: 1.5rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.icon { font-size: 3.5rem; }
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-top: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.googleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: box-shadow 0.15s, transform 0.15s;
+  margin-top: 0.5rem;
+}
+
+.googleBtn:active { transform: scale(0.97); }
+.googleBtn:disabled { opacity: 0.6; }
+
+.googleIcon { width: 22px; height: 22px; flex-shrink: 0; }
+
+.divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.emailForm {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 1rem;
+  color: var(--color-text);
+  outline: none;
+}
+.input:focus { border-color: var(--color-primary); }
+
+.emailBtn {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  transition: opacity 0.15s;
+}
+.emailBtn:disabled { opacity: 0.6; }
+
+.error {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+}
+
+.note {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
