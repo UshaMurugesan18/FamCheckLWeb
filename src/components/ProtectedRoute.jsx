@@ -12,7 +12,10 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  // Check localStorage directly as synchronous fallback — prevents flash
+  // redirect during the brief window between setUser() and React commit
+  const savedEmail = localStorage.getItem('fc_email');
+  if (!user && !savedEmail) return <Navigate to="/login" replace />;
 
   return children;
 }

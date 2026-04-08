@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { getMemberByEmail } from '../api/api';
 
 const AuthContext = createContext(null);
@@ -30,8 +31,11 @@ export function AuthProvider({ children }) {
     const m = await getMemberByEmail(email.trim().toLowerCase());
     if (!m) throw new Error('NO_MEMBER');
     localStorage.setItem(STORAGE_KEY, email.trim().toLowerCase());
-    setUser({ email: email.trim().toLowerCase() });
-    setMember(m);
+    // flushSync forces React to commit state NOW before navigate() is called
+    flushSync(() => {
+      setUser({ email: email.trim().toLowerCase() });
+      setMember(m);
+    });
     return m;
   }
 
