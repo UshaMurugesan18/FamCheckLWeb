@@ -581,10 +581,19 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
 // ── Main ReceiverHome ───────────────────────────────────────────────────────
 export default function ReceiverHome() {
   const { memberId } = useParams();
-  const [assignments, setAssignments] = useState([]);
-  const [allAssignments, setAllAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const initialLoadDone = useRef(false);
+
+  // Read cache SYNCHRONOUSLY inside useState initializer — loading is false instantly if cache exists
+  const CACHE_KEY = `fc_assignments_${memberId}`;
+  const [assignments, setAssignments] = useState(() => {
+    try { const c = localStorage.getItem(`fc_assignments_${memberId}`); return c ? JSON.parse(c).active : []; } catch (_) { return []; }
+  });
+  const [allAssignments, setAllAssignments] = useState(() => {
+    try { const c = localStorage.getItem(`fc_assignments_${memberId}`); return c ? JSON.parse(c).all : []; } catch (_) { return []; }
+  });
+  const [loading, setLoading] = useState(() => {
+    try { return !localStorage.getItem(`fc_assignments_${memberId}`); } catch (_) { return true; }
+  });
+  const initialLoadDone = useRef(!loading); // already loaded if cache hit
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
 
@@ -716,17 +725,7 @@ export default function ReceiverHome() {
       );
     }
 
-    // ── Show cached data INSTANTLY — no loading wait ──
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { active, all } = JSON.parse(cached);
-        setAssignments(active);
-        setAllAssignments(all);
-        setLoading(false);
-        initialLoadDone.current = true;
-      }
-    } catch (_) {}
+    // ── Cache read now done in useState initializer above ──
 
     const unsub = subscribeToAssignmentsByMember(memberId, (all) => {
       const active = filterActive(all);
