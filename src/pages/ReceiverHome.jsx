@@ -8,6 +8,7 @@ import {
   completeAssignment,
   updateAssignmentState,
   registerPushSubscription,
+  scheduleAlarms,
   STATES,
   MAX_SNOOZES,
 } from '../api/api';
@@ -662,6 +663,7 @@ export default function ReceiverHome() {
       );
       setAssignments(active);
       setAllAssignments(all);
+      scheduleAlarms(active); // schedule phone alarms for active assignments
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
