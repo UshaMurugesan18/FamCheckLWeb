@@ -257,17 +257,7 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
       }
       return;
     }
-    // Daily: deny only if assignedDate is more than 1 day in the past
-    // (same 1-day grace as tracker to handle UTC-stored dates)
-    if (assignment.assignedDate) {
-      const _d = new Date(); _d.setDate(_d.getDate() - 1);
-      const _yesterday = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
-      if (assignment.assignedDate >= _yesterday) return; // today or yesterday → still active
-    }
-    if (isPastDeadline(assignment.timeEnd)) {
-      updateAssignmentState(assignment.id, STATES.DENIED)
-        .then(() => setAssignment((a) => ({ ...a, state: STATES.DENIED })));
-    }
+    // Daily: never auto-deny on client side — server handles expiry
   }, [assignment]);
 
   // Alarm
@@ -617,9 +607,11 @@ export default function ReceiverHome() {
 
   useEffect(() => {
     const today = todayStr();
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    const yesterday = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    // Show assignments from the last 3 days to handle UTC offset and timezone issues
+    const d2 = new Date(); d2.setDate(d2.getDate() - 1);
+    const yesterday = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+    const d3 = new Date(); d3.setDate(d3.getDate() - 2);
+    const twoDaysAgo = `${d3.getFullYear()}-${String(d3.getMonth()+1).padStart(2,'0')}-${String(d3.getDate()).padStart(2,'0')}`;
 
     const unsub = subscribeToAssignmentsByMember(memberId, (all) => {
       const active = all.filter(
@@ -628,9 +620,10 @@ export default function ReceiverHome() {
           (
             // Tracker: show ALL days of the tracker group
             a.assignType === 'tracker' ||
-            // Daily: today or yesterday (UTC offset fix)
+            // Daily: today, yesterday, or 2 days ago (handles UTC offset + any timezone drift)
             a.assignedDate === today ||
             a.assignedDate === yesterday ||
+            a.assignedDate === twoDaysAgo ||
             // Weekly: active range
             (a.weekStart && a.weekEnd && a.weekStart <= today && a.weekEnd >= today)
           )
