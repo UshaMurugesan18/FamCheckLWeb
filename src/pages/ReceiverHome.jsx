@@ -593,6 +593,7 @@ export default function ReceiverHome() {
   const [loading, setLoading] = useState(() => {
     try { return !localStorage.getItem(`fc_assignments_${memberId}`); } catch (_) { return true; }
   });
+  const [apiLoaded, setApiLoaded] = useState(false); // true after first API response — prevents premature "No tasks"
   const initialLoadDone = useRef(!loading); // already loaded if cache hit
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
@@ -734,11 +735,13 @@ export default function ReceiverHome() {
       scheduleAlarms(active);
       // Save to cache for next open
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ active, all })); } catch (_) {}
+      setApiLoaded(true);
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
       }
     }, () => {
+      setApiLoaded(true);
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
@@ -748,6 +751,15 @@ export default function ReceiverHome() {
   }, [memberId]);
 
   if (loading) {
+    return (
+      <div className={styles.center}>
+        <p className={styles.loadingText}>Loading your tasks…</p>
+      </div>
+    );
+  }
+
+  // Don't show "No tasks" until API has confirmed — avoids blank flash on slow Railway cold start
+  if (assignments.length === 0 && !apiLoaded) {
     return (
       <div className={styles.center}>
         <p className={styles.loadingText}>Loading your tasks…</p>

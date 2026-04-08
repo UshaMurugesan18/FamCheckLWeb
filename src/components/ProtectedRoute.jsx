@@ -4,7 +4,11 @@ import { useAuth } from '../context/AuthContext';
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  // Synchronous check first — never show blank loading screen if logged in
+  const savedEmail = localStorage.getItem('fc_email');
+
+  // Only show loading if we have no cached data at all
+  if (loading && !savedEmail) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
@@ -12,9 +16,6 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // Check localStorage directly as synchronous fallback — prevents flash
-  // redirect during the brief window between setUser() and React commit
-  const savedEmail = localStorage.getItem('fc_email');
   if (!user && !savedEmail) return <Navigate to="/login" replace />;
 
   return children;

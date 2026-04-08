@@ -7,25 +7,22 @@ const STORAGE_KEY = 'fc_email';
 const MEMBER_KEY  = 'fc_member';
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
-  const [member, setMember]   = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize synchronously from localStorage — no loading flash ever
+  const [user, setUser] = useState(() => {
+    const email = localStorage.getItem(STORAGE_KEY);
+    return email ? { email } : null;
+  });
+  const [member, setMember] = useState(() => {
+    try { const m = localStorage.getItem(MEMBER_KEY); return m ? JSON.parse(m) : null; } catch (_) { return null; }
+  });
+  const [loading, setLoading] = useState(() => {
+    // Only show loading if no cached data at all
+    return !localStorage.getItem(STORAGE_KEY) || !localStorage.getItem(MEMBER_KEY);
+  });
 
   useEffect(() => {
-    const savedEmail  = localStorage.getItem(STORAGE_KEY);
-    const savedMember = localStorage.getItem(MEMBER_KEY);
-
+    const savedEmail = localStorage.getItem(STORAGE_KEY);
     if (!savedEmail) { setLoading(false); return; }
-
-    // Instantly restore from cache — zero wait, no white screen
-    if (savedMember) {
-      try {
-        const m = JSON.parse(savedMember);
-        setUser({ email: savedEmail });
-        setMember(m);
-        setLoading(false); // show UI immediately
-      } catch (_) {}
-    }
 
     // Refresh member from API in background (non-blocking)
     getMemberByEmail(savedEmail)
@@ -35,7 +32,6 @@ export function AuthProvider({ children }) {
           setUser({ email: savedEmail });
           setMember(m);
         } else {
-          // Email no longer in system
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(MEMBER_KEY);
           setUser(null);

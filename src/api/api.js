@@ -144,8 +144,9 @@ export async function registerPushSubscription(memberId) {
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return null;
+    // Do NOT auto-request Notification.requestPermission() here — it causes a blank page
+    // on some Android browsers when the user taps "Allow". Only subscribe if already granted.
+    if (Notification.permission !== 'granted') return null;
     const vapidKey = 'BPqk3hp1RogRajnyOcwzAtKKM7vrpdVNW_sATZQoyEIJrbr1lcwcKkhaW-qDPEVE4hQuEArzfOuzYVF4EWvFbFU';
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
