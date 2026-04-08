@@ -605,20 +605,26 @@ export default function ReceiverHome() {
   }
 
   async function handlePopupSnooze(popup) {
-    unlockVoice(); // first tap = user gesture → unlocks speech + notifications
+    unlockVoice();
+    if (popup && window.speechSynthesis) {
+      const { assignment, pendingTasks } = popup;
+      speak(`Hi ${assignment.memberName}, snoozed. Please complete: ${pendingTasks.map((t) => t.taskName).join(', ')} soon.`);
+    }
     setAlarmPopup(null);
     const { assignment } = popup;
     const newCount = (assignment.snoozeCount || 0) + 1;
     if (newCount <= MAX_SNOOZES) {
       await snoozeAssignment(assignment.id, newCount);
     }
-    window.speechSynthesis?.cancel();
   }
 
   function handlePopupClose() {
-    unlockVoice(); // first tap = user gesture → unlocks speech + notifications
+    unlockVoice();
+    if (alarmPopup && window.speechSynthesis) {
+      const { assignment, pendingTasks } = alarmPopup;
+      speak(`Hi ${assignment.memberName}, please complete: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+    }
     setAlarmPopup(null);
-    window.speechSynthesis?.cancel();
   }
 
   useEffect(() => {
