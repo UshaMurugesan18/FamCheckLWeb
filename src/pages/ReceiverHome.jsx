@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { App as CapApp } from '@capacitor/app';
 import {
   subscribeToAssignmentsByMember,
   getAssignmentTasks,
@@ -600,6 +601,21 @@ export default function ReceiverHome() {
       document.removeEventListener('click', unlock);
     };
   }, [alarmUnlocked]);
+
+  // When app comes to foreground (user tapped notification), re-speak active alarm
+  useEffect(() => {
+    let handle;
+    CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive && alarmPopup) {
+        const { assignment, pendingTasks } = alarmPopup;
+        // Small delay to ensure audio context is ready
+        setTimeout(() => {
+          speak(`Hi ${assignment.memberName}, you have pending tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+        }, 500);
+      }
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
+  }, [alarmPopup]);
 
   function unlockVoice() {
     if (alarmUnlocked) return;

@@ -4,34 +4,53 @@ import { getMemberByEmail } from '../api/api';
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'fc_email';
+const MEMBER_KEY  = 'fc_member';
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);  // { email }
+  const [user, setUser]       = useState(null);
   const [member, setMember]   = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      getMemberByEmail(saved)
-        .then((m) => {
-          setUser({ email: saved });
-          setMember(m);
-        })
-        .catch(() => {
-          localStorage.removeItem(STORAGE_KEY);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    const savedEmail  = localStorage.getItem(STORAGE_KEY);
+    const savedMember = localStorage.getItem(MEMBER_KEY);
+
+    if (!savedEmail) { setLoading(false); return; }
+
+    // Instantly restore from cache — zero wait, no white screen
+    if (savedMember) {
+      try {
+        const m = JSON.parse(savedMember);
+        setUser({ email: savedEmail });
+        setMember(m);
+        setLoading(false); // show UI immediately
+      } catch (_) {}
     }
+
+    // Refresh member from API in background (non-blocking)
+    getMemberByEmail(savedEmail)
+      .then((m) => {
+        if (m) {
+          localStorage.setItem(MEMBER_KEY, JSON.stringify(m));
+          setUser({ email: savedEmail });
+          setMember(m);
+        } else {
+          // Email no longer in system
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(MEMBER_KEY);
+          setUser(null);
+          setMember(null);
+        }
+      })
+      .catch(() => { /* keep cached data on network error */ })
+      .finally(() => setLoading(false));
   }, []);
 
   async function loginWithEmail(email) {
     const m = await getMemberByEmail(email.trim().toLowerCase());
     if (!m) throw new Error('NO_MEMBER');
     localStorage.setItem(STORAGE_KEY, email.trim().toLowerCase());
-    // flushSync forces React to commit state NOW before navigate() is called
+    localStorage.setItem(MEMBER_KEY, JSON.stringify(m));
     flushSync(() => {
       setUser({ email: email.trim().toLowerCase() });
       setMember(m);
@@ -39,25 +58,30 @@ export function AuthProvider({ children }) {
     return m;
   }
 
-  // kept for compatibility — not used on Android
-  async function loginWithGoogle() { throw new Error('Google login not available'); }
-  async function registerWithEmail() { throw new Error('Use email login'); }
-  async function resetPassword() {}
-
   async function logout() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(MEMBER_KEY);
     setUser(null);
     setMember(null);
   }
 
   async function refreshMember() {
-    if (user?.email) {
-      const m = await getMemberByEmail(user.email);
-      setMember(m);
-      return m;
+    const savedEmail = localStorage.getItem(STORAGE_KEY);
+    if (savedEmail) {
+      const m = await getMemberByEmail(savedEmail);
+      if (m) {
+        localStorage.setItem(MEMBER_KEY, JSON.stringify(m));
+        setMember(m);
+        return m;
+      }
     }
     return null;
   }
+
+  // kept for compatibility
+  async function loginWithGoogle() { throw new Error('Google login not available'); }
+  async function registerWithEmail() {}
+  async function resetPassword() {}
 
   return (
     <AuthContext.Provider value={{ user, member, loading, loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword, logout, refreshMember }}>
