@@ -649,7 +649,8 @@ export default function ReceiverHome() {
       utt.volume = 0;
       window.speechSynthesis.speak(utt);
     }
-    if (Notification.permission === 'default') {
+    // Notification API is undefined in Android WebView — guard required
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission();
     }
     setAlarmUnlocked(true);
@@ -662,8 +663,8 @@ export default function ReceiverHome() {
       const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
     }
-    // Browser Notification for background/lock-screen
-    if (Notification.permission === 'granted') {
+    // Browser Notification for background/lock-screen (NOT available in Android WebView)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       const n = new Notification(`🔔 ${popup.assignment.groupName}`, {
         body: popup.pendingTasks.map((t) => `• ${t.taskName}`).join('\n'),
         icon: '/icon-192.png',

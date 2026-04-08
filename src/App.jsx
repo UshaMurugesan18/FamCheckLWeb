@@ -1,5 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Catches any React crash and shows a visible error instead of blank screen
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100vh', background: '#fff' }}>
+          <h2 style={{ color: '#dc2626' }}>Something went wrong</h2>
+          <p style={{ color: '#64748b', marginTop: '0.5rem' }}>{this.state.error.message}</p>
+          <button
+            onClick={() => { this.setState({ error: null }); window.location.href = '/'; }}
+            style={{ marginTop: '1.5rem', padding: '0.75rem 2rem', background: '#4f63d2', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem' }}
+          >
+            Reload App
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleRedirect from './components/RoleRedirect';
@@ -20,6 +43,7 @@ function App() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -44,6 +68,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
