@@ -12,7 +12,7 @@ import AssignTask from './pages/AssignTask';
 import SelectGroup from './pages/SelectGroup';
 import ReceiverHome from './pages/ReceiverHome';
 import ReviewAssignment from './pages/ReviewAssignment';
-import { seedMorningPreparation } from './firebase/firestore';
+import { seedMorningPreparation } from './api/api';
 
 function App() {
   useEffect(() => {

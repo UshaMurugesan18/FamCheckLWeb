@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ROLES } from '../firebase/firestore';
+import { ROLES } from '../api/api';
 
 export default function RoleRedirect() {
   const { user, member, loading } = useAuth();
