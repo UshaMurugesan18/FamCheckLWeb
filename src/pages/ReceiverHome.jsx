@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import {
   subscribeToAssignmentsByMember,
   getAssignmentTasks,
@@ -49,15 +52,23 @@ function isPastDeadline(timeEnd) {
   return now.getHours() * 60 + now.getMinutes() >= eh * 60 + em;
 }
 
-function speak(text) {
+async function speak(text) {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await TextToSpeech.stop();
+      await TextToSpeech.speak({ text, lang: 'en-US', rate: 0.85, volume: 1.0, pitch: 1.0 });
+    } catch (e) {
+      console.warn('[TTS]', e);
+    }
+    return;
+  }
+  // Web fallback — requires prior user gesture to unlock audio
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  // Small delay so cancel() completes before new utterance starts
   setTimeout(() => {
     const utt = new SpeechSynthesisUtterance(text);
     utt.rate = 0.85;
     utt.volume = 1;
-    // Use en-IN if available, otherwise fall back to any English voice or default
     const voices = window.speechSynthesis.getVoices();
     const preferred = voices.find((v) => v.lang === 'en-IN')
       || voices.find((v) => v.lang.startsWith('en'))
@@ -595,6 +606,12 @@ export default function ReceiverHome() {
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const alarmUnlockedRef = useRef(false); // ref so timers/callbacks always see latest value
   const [alarmPopup, setAlarmPopup] = useState(null);
+  const alarmPopupRef = useRef(null); // ref — always current, used by notification listener
+
+  function updateAlarmPopup(popup) {
+    alarmPopupRef.current = popup;
+    setAlarmPopup(popup);
+  }
 
   // Register for background push notifications (delayed so it doesn't block initial render)
   useEffect(() => {
@@ -624,20 +641,35 @@ export default function ReceiverHome() {
     };
   }, [alarmUnlocked]);
 
-  // When app comes to foreground (user tapped notification), re-speak active alarm
+  // When app comes to foreground, re-speak active alarm (uses ref — mounts once)
   useEffect(() => {
     let handle;
     CapApp.addListener('appStateChange', ({ isActive }) => {
-      if (isActive && alarmPopup) {
-        const { assignment, pendingTasks } = alarmPopup;
-        // Small delay to ensure audio context is ready
+      if (isActive && alarmPopupRef.current) {
+        const { assignment, pendingTasks } = alarmPopupRef.current;
         setTimeout(() => {
           speak(`Hi ${assignment.memberName}, you have pending tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
         }, 500);
       }
     }).then((h) => { handle = h; });
     return () => { handle?.remove(); };
-  }, [alarmPopup]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When user TAPS the notification — speak immediately (native TTS, no gesture needed)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle;
+    LocalNotifications.addListener('localNotificationActionPerformed', () => {
+      const popup = alarmPopupRef.current;
+      if (popup) {
+        const { assignment, pendingTasks } = popup;
+        speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+      }
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function unlockVoice() {
     if (alarmUnlocked) return;
@@ -657,10 +689,11 @@ export default function ReceiverHome() {
   }
 
   function showAlarm(popup) {
-    setAlarmPopup(popup);
-    // Speak immediately if audio already unlocked by prior user tap
-    if (alarmUnlockedRef.current && window.speechSynthesis) {
-      const { assignment, pendingTasks } = popup;
+    updateAlarmPopup(popup);
+    // Native: TTS works without any user gesture — always speak
+    // Web: only speak if user already unlocked audio via a tap
+    const { assignment, pendingTasks } = popup;
+    if (Capacitor.isNativePlatform() || alarmUnlockedRef.current) {
       speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
     }
     // Browser Notification for background/lock-screen (NOT available in Android WebView)
@@ -677,8 +710,8 @@ export default function ReceiverHome() {
 
   async function handlePopupSnooze(popup) {
     const { assignment } = popup;
-    setAlarmPopup(null);
-    unlockVoice();
+    updateAlarmPopup(null);
+    if (!Capacitor.isNativePlatform()) unlockVoice();
     speak(`Snoozed. Alarm will ring again in ${assignment.alarmInterval || 5} minutes.`);
     const newCount = (assignment.snoozeCount || 0) + 1;
     if (newCount <= MAX_SNOOZES) {
@@ -688,8 +721,8 @@ export default function ReceiverHome() {
 
   function handlePopupClose() {
     const popup = alarmPopup;
-    setAlarmPopup(null);
-    unlockVoice();
+    updateAlarmPopup(null);
+    if (!Capacitor.isNativePlatform()) unlockVoice();
     if (popup) {
       const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, please complete: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
