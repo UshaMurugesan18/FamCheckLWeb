@@ -7,6 +7,7 @@ import {
   snoozeAssignment,
   completeAssignment,
   updateAssignmentState,
+  registerPushSubscription,
   STATES,
   MAX_SNOOZES,
 } from '../api/api';
@@ -558,6 +559,11 @@ export default function ReceiverHome() {
   const [loading, setLoading] = useState(true);
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
+
+  // Register for background push notifications
+  useEffect(() => {
+    registerPushSubscription(memberId);
+  }, [memberId]);
 
   function unlockVoice() {
     if (alarmUnlocked) return;
