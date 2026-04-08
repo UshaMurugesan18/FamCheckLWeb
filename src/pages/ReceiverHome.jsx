@@ -93,7 +93,7 @@ function compressImage(file, maxWidth, quality) {
 }
 
 // ── Alarm Popup Overlay ────────────────────────────────────────────────────
-function AlarmPopup({ popup, onSnooze, onClose, onSpeak }) {
+function AlarmPopup({ popup, onSnooze, onClose }) {
   if (!popup) return null;
   const { assignment, pendingTasks } = popup;
   const snoozesLeft = MAX_SNOOZES - (assignment.snoozeCount || 0);
@@ -113,9 +113,6 @@ function AlarmPopup({ popup, onSnooze, onClose, onSpeak }) {
           ))}
         </div>
         <div className={styles.popupActions}>
-          <button className={styles.popupSpeak} onClick={() => onSpeak(popup)}>
-            🔊 Read aloud
-          </button>
           {snoozesLeft > 0 && (
             <button className={styles.popupSnooze} onClick={() => onSnooze(popup)}>
               😴 Snooze {assignment.alarmInterval || 5} min ({snoozesLeft} left)
@@ -596,6 +593,7 @@ export default function ReceiverHome() {
   const [apiLoaded, setApiLoaded] = useState(false); // true after first API response — prevents premature "No tasks"
   const initialLoadDone = useRef(!loading); // already loaded if cache hit
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
+  const alarmUnlockedRef = useRef(false); // ref so timers/callbacks always see latest value
   const [alarmPopup, setAlarmPopup] = useState(null);
 
   // Register for background push notifications (delayed so it doesn't block initial render)
@@ -612,6 +610,7 @@ export default function ReceiverHome() {
         const utt = new SpeechSynthesisUtterance(' ');
         utt.volume = 0;
         window.speechSynthesis.speak(utt);
+        alarmUnlockedRef.current = true;
         setAlarmUnlocked(true);
       }
       document.removeEventListener('touchstart', unlock);
@@ -653,13 +652,14 @@ export default function ReceiverHome() {
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+    alarmUnlockedRef.current = true;
     setAlarmUnlocked(true);
   }
 
   function showAlarm(popup) {
     setAlarmPopup(popup);
-    // Auto-speak when alarm fires (works if user has already interacted with the page)
-    if (window.speechSynthesis) {
+    // Speak immediately if audio already unlocked by prior user tap
+    if (alarmUnlockedRef.current && window.speechSynthesis) {
       const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
     }
@@ -675,20 +675,12 @@ export default function ReceiverHome() {
     }
   }
 
-  function handlePopupSpeak(popup) {
-    unlockVoice();
-    if (popup && window.speechSynthesis) {
-      const { assignment, pendingTasks } = popup;
-      speak(`Hi ${assignment.memberName}, today you have to get ready these things: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
-    }
-  }
-
   async function handlePopupSnooze(popup) {
     const { assignment } = popup;
     setAlarmPopup(null);
     unlockVoice();
-    const newCount = (assignment.snoozeCount || 0) + 1;
     speak(`Snoozed. Alarm will ring again in ${assignment.alarmInterval || 5} minutes.`);
+    const newCount = (assignment.snoozeCount || 0) + 1;
     if (newCount <= MAX_SNOOZES) {
       await snoozeAssignment(assignment.id, newCount);
     }
