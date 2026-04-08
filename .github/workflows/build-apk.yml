@@ -36,10 +36,13 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x android/gradlew
 
+      - name: Clear Gradle JAR cache (prevents BouncyCastle instrumentation failure)
+        run: rm -rf ~/.gradle/caches/jars-*
+
       - name: Build debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --no-build-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
