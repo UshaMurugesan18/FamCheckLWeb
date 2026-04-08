@@ -6,9 +6,10 @@ import styles from './Login.module.css';
 
 const isNative = Capacitor.isNativePlatform();
 export default function Login() {
-  const { loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -111,10 +112,25 @@ export default function Login() {
         </form>
 
         {error && <p className={styles.error}>{error}</p>}
+        {info && <p style={{color:'green', fontSize:'0.9rem', marginTop:'8px', textAlign:'center'}}>{info}</p>}
 
-        <p className={styles.note} style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => { setIsRegister(!isRegister); setError(''); }}>
+        <p className={styles.note} style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => { setIsRegister(!isRegister); setError(''); setInfo(''); }}>
           {isRegister ? 'Already have an account? Sign In' : 'New user? Register here'}
         </p>
+        {!isRegister && (
+          <p className={styles.note} style={{cursor:'pointer', textDecoration:'underline', marginTop:'4px'}} onClick={async () => {
+            setError(''); setInfo('');
+            if (!email.trim()) { setError('Enter your email first, then tap Forgot Password.'); return; }
+            try {
+              await resetPassword(email.trim());
+              setInfo('Password reset email sent! Check your inbox, set a new password, then sign in here.');
+            } catch (err) {
+              setError('Could not send reset email: ' + (err.code || err.message));
+            }
+          }}>
+            Forgot password? Reset via email
+          </p>
+        )}
       </div>
     </div>
   );
