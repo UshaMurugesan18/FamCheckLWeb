@@ -298,7 +298,9 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
       }, (assignment.alarmInterval || 5) * 60 * 1000);
     }
     return () => clearInterval(alarmRef.current);
-  }, [assignment, tasks]); // ← removed alarmUnlocked to prevent popup re-firing
+  // Use primitive values so 30-second poll (which creates new object refs) doesn't restart the timer
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignment.id, assignment.state, assignment.alarmInterval, assignment.timeStart, assignment.timeEnd, tasks]);
 
   async function handleToggle(task) {
     const newDone = !task.completed;

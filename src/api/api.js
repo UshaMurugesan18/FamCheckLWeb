@@ -140,20 +140,25 @@ export async function registerPushSubscription(memberId) {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return null;
 
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    // VAPID public key — public by design, safe to hardcode
+    const vapidKey = 'BPqk3hp1RogRajnyOcwzAtKKM7vrpdVNW_sATZQoyEIJrbr1lcwcKkhaW-qDPEVE4hQuEArzfOuzYVF4EWvFbFU';
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
 
+    const subJson = subscription.toJSON();
+    console.log('[Push] Subscribing memberId:', memberId, 'endpoint:', subJson.endpoint);
+
     await api(`/api/push/subscribe`, {
       method: 'POST',
-      body: JSON.stringify({ memberId, subscription }),
+      body: JSON.stringify({ memberId, subscription: subJson }),
     });
 
+    console.log('[Push] Subscription saved to backend ✓');
     return subscription;
   } catch (err) {
-    console.error('Push subscription failed:', err);
+    console.error('[Push] Subscription failed:', err);
     return null;
   }
 }
