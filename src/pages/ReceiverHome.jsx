@@ -295,33 +295,32 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
     // Daily: never auto-deny on client side — server handles expiry
   }, [assignment]);
 
-  // Alarm — only depends on assignment+tasks, NOT alarmUnlocked
-  // Voice is triggered by user gesture in ReceiverHome, not here
+  // Alarm — fires immediately on ASSIGNED, waits for interval on SNOOZED
   useEffect(() => {
-    alarmFiredRef.current = false; // reset on new assignment/tasks
+    alarmFiredRef.current = false;
     if (!assignment || !tasks.length) return;
     if (
       isInActiveWindow(assignment.timeStart, assignment.timeEnd) &&
       (assignment.state === STATES.ASSIGNED || assignment.state === STATES.SNOOZED)
     ) {
       const pending = tasks.filter((t) => !t.completed);
-      if (pending.length > 0 && !alarmFiredRef.current) {
+      // Fire immediately only on ASSIGNED — SNOOZED must wait for the interval
+      if (pending.length > 0 && !alarmFiredRef.current && assignment.state === STATES.ASSIGNED) {
         alarmFiredRef.current = true;
-        onAlarm({ assignment, pendingTasks: pending });
+        onAlarm({ assignment, pendingTasks: pending, snoozeCallback: handleSnooze });
         setAlarmActive(true);
-        setExpanded(true); // auto-expand card so tasks visible after popup closes
+        setExpanded(true);
       }
       alarmRef.current = setInterval(() => {
         const p = tasks.filter((t) => !t.completed);
         if (p.length === 0) { clearInterval(alarmRef.current); return; }
         alarmFiredRef.current = true;
-        onAlarm({ assignment, pendingTasks: p });
+        onAlarm({ assignment, pendingTasks: p, snoozeCallback: handleSnooze });
         setAlarmActive(true);
         setExpanded(true);
       }, (assignment.alarmInterval || 5) * 60 * 1000);
     }
     return () => clearInterval(alarmRef.current);
-  // Use primitive values so 30-second poll (which creates new object refs) doesn't restart the timer
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignment.id, assignment.state, assignment.alarmInterval, assignment.timeStart, assignment.timeEnd, tasks]);
 
@@ -335,10 +334,10 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
   async function handleSnooze() {
     const newCount = (assignment.snoozeCount || 0) + 1;
     if (newCount > MAX_SNOOZES) { setError(`Max ${MAX_SNOOZES} snoozes used.`); return; }
-    window.speechSynthesis.cancel();
     setAlarmActive(false);
     clearInterval(alarmRef.current);
     await snoozeAssignment(assignment.id, newCount);
+    // Update local state immediately so popup shows correct count on next fire
     setAssignment((a) => ({ ...a, state: STATES.SNOOZED, snoozeCount: newCount }));
   }
 
@@ -619,8 +618,9 @@ export default function ReceiverHome() {
     return () => clearTimeout(t);
   }, [memberId]);
 
-  // Unlock voice on first tap anywhere — required by Android/iOS
+  // Unlock web speechSynthesis on first tap — NOT needed on native (native TTS bypasses gesture restriction)
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) return;
     function unlock() {
       if (window.speechSynthesis && !alarmUnlocked) {
         window.speechSynthesis.cancel();
@@ -630,8 +630,6 @@ export default function ReceiverHome() {
         alarmUnlockedRef.current = true;
         setAlarmUnlocked(true);
       }
-      document.removeEventListener('touchstart', unlock);
-      document.removeEventListener('click', unlock);
     }
     document.addEventListener('touchstart', unlock, { once: true });
     document.addEventListener('click', unlock, { once: true });
@@ -639,7 +637,8 @@ export default function ReceiverHome() {
       document.removeEventListener('touchstart', unlock);
       document.removeEventListener('click', unlock);
     };
-  }, [alarmUnlocked]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // When app comes to foreground, re-speak active alarm (uses ref — mounts once)
   useEffect(() => {
@@ -669,6 +668,17 @@ export default function ReceiverHome() {
     }).then((h) => { handle = h; });
     return () => { handle?.remove(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Android back button — navigate back or exit app
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle;
+    CapApp.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack) window.history.back();
+      else CapApp.exitApp();
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
   }, []);
 
   function unlockVoice() {
@@ -711,18 +721,20 @@ export default function ReceiverHome() {
   async function handlePopupSnooze(popup) {
     const { assignment } = popup;
     updateAlarmPopup(null);
-    if (!Capacitor.isNativePlatform()) unlockVoice();
     speak(`Snoozed. Alarm will ring again in ${assignment.alarmInterval || 5} minutes.`);
-    const newCount = (assignment.snoozeCount || 0) + 1;
-    if (newCount <= MAX_SNOOZES) {
-      await snoozeAssignment(assignment.id, newCount);
+    // Delegate to AssignmentCard's handleSnooze — it clears the interval, updates local state
+    // and calls the API, so the count decreases correctly on the next popup
+    if (popup.snoozeCallback) {
+      await popup.snoozeCallback();
+    } else {
+      const newCount = (assignment.snoozeCount || 0) + 1;
+      if (newCount <= MAX_SNOOZES) await snoozeAssignment(assignment.id, newCount);
     }
   }
 
   function handlePopupClose() {
     const popup = alarmPopup;
     updateAlarmPopup(null);
-    if (!Capacitor.isNativePlatform()) unlockVoice();
     if (popup) {
       const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, please complete: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
