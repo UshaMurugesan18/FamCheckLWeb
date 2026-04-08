@@ -257,8 +257,13 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
       }
       return;
     }
-    // Daily: deny only if today is the assigned day AND the time window has passed
-    if (assignment.assignedDate && today < assignment.assignedDate) return;
+    // Daily: deny only if assignedDate is more than 1 day in the past
+    // (same 1-day grace as tracker to handle UTC-stored dates)
+    if (assignment.assignedDate) {
+      const _d = new Date(); _d.setDate(_d.getDate() - 1);
+      const _yesterday = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+      if (assignment.assignedDate >= _yesterday) return; // today or yesterday → still active
+    }
     if (isPastDeadline(assignment.timeEnd)) {
       updateAssignmentState(assignment.id, STATES.DENIED)
         .then(() => setAssignment((a) => ({ ...a, state: STATES.DENIED })));
@@ -317,8 +322,10 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
     // photo is optional — allow submit without it
     setSubmitting(true);
     try {
-      // Compress image to stay under Firestore 1MB doc limit
-      const compressed = await compressImage(photoFile, 400, 0.4);
+      let compressed = null;
+      if (photoFile) {
+        compressed = await compressImage(photoFile, 400, 0.4);
+      }
       await completeAssignment(assignment.id, compressed);
       window.speechSynthesis.cancel();
       clearInterval(alarmRef.current);
