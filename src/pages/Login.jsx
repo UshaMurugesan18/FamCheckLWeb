@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../api/api';
 import styles from './Login.module.css';
 
 export default function Login() {
@@ -16,8 +17,15 @@ export default function Login() {
     if (!email.trim()) { setError('Enter your email.'); return; }
     setLoading(true);
     try {
-      await loginWithEmail(email.trim());
-      navigate('/redirect', { replace: true });
+      const member = await loginWithEmail(email.trim());
+      // Navigate directly based on role — no RoleRedirect, no race condition
+      if (member && member.role === ROLES.RECEIVER) {
+        navigate(`/receiver/${member.id}`, { replace: true });
+      } else if (member && member.familyId) {
+        navigate(`/family/${member.familyId}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       if (err.message === 'NO_MEMBER') {
         setError('Email not found. Ask your family creator to add you first.');

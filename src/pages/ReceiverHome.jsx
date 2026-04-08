@@ -580,6 +580,27 @@ export default function ReceiverHome() {
     return () => clearTimeout(t);
   }, [memberId]);
 
+  // Unlock voice on first tap anywhere — required by Android/iOS
+  useEffect(() => {
+    function unlock() {
+      if (window.speechSynthesis && !alarmUnlocked) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(' ');
+        utt.volume = 0;
+        window.speechSynthesis.speak(utt);
+        setAlarmUnlocked(true);
+      }
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('click', unlock);
+    }
+    document.addEventListener('touchstart', unlock, { once: true });
+    document.addEventListener('click', unlock, { once: true });
+    return () => {
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('click', unlock);
+    };
+  }, [alarmUnlocked]);
+
   function unlockVoice() {
     if (alarmUnlocked) return;
     // Speak directly inside a user-gesture handler — required by iOS/Android
@@ -597,6 +618,11 @@ export default function ReceiverHome() {
 
   function showAlarm(popup) {
     setAlarmPopup(popup);
+    // Auto-speak when alarm fires (works if user has already interacted with the page)
+    if (window.speechSynthesis) {
+      const { assignment, pendingTasks } = popup;
+      speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+    }
     // Browser Notification for background/lock-screen
     if (Notification.permission === 'granted') {
       const n = new Notification(`🔔 ${popup.assignment.groupName}`, {
@@ -618,11 +644,11 @@ export default function ReceiverHome() {
   }
 
   async function handlePopupSnooze(popup) {
-    const { assignment, pendingTasks } = popup;
+    const { assignment } = popup;
     setAlarmPopup(null);
     unlockVoice();
-    speak(`Hi ${assignment.memberName}, snoozed. Please complete: ${pendingTasks.map((t) => t.taskName).join(', ')} soon.`);
     const newCount = (assignment.snoozeCount || 0) + 1;
+    speak(`Snoozed. Alarm will ring again in ${assignment.alarmInterval || 5} minutes.`);
     if (newCount <= MAX_SNOOZES) {
       await snoozeAssignment(assignment.id, newCount);
     }
