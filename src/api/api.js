@@ -176,108 +176,62 @@ function urlBase64ToUint8Array(base64String) {
  * Called every time assignments reload. Cancels old ones and reschedules.
  * Works on Android even when phone is locked.
  */
+/**
+ * Schedule native AlarmManager alarms — fires AlarmService (Java TTS + foreground notification).
+ * Works when screen is off, app is in background, or app is killed.
+ */
 export async function scheduleAlarms(assignments) {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
-    // Always create channel FIRST — must exist before any notification is scheduled.
-    // Channel ID v2 forces recreation if old low-importance channel exists from a previous install.
-    await LocalNotifications.createChannel({
-      id: 'alarm-v2',
-      name: 'Task Alarms',
-      importance: 5,        // IMPORTANCE_HIGH — shows as heads-up banner
-      description: 'Rings when your tasks are due',
-      vibration: true,
-      lights: true,
-      lightColor: '#FF4444',
-    });
+    const { AlarmPlugin } = await import('../plugins/AlarmPlugin.js');
 
-    await LocalNotifications.registerActionTypes({
-      types: [{
-        id: 'ALARM_ACTIONS',
-        actions: [
-          { id: 'SNOOZE', title: '\u{1F634} Snooze', foreground: true },
-          { id: 'DONE',   title: '\u2713 Open',      foreground: true },
-        ],
-      }],
-    });
-
-    // Cancel all previously scheduled alarms
-    const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-      await LocalNotifications.cancel({ notifications: pending.notifications });
-    }
-
-    const notifications = [];
-    const now = new Date();
+    const alarms = [];
+    const scheduledIds = [];
+    const now = Date.now();
 
     for (const a of assignments) {
       if (!a.timeStart || !a.timeEnd || !a.alarmInterval) continue;
       if (a.state !== 'assigned' && a.state !== 'snoozed') continue;
 
       const interval = a.alarmInterval || 5;
-
-      // Build schedule: from timeStart to timeEnd, every interval minutes, for today
       const [sh, sm] = a.timeStart.split(':').map(Number);
       const [eh, em] = a.timeEnd.split(':').map(Number);
       const startMins = sh * 60 + sm;
       const endMins   = eh * 60 + em;
 
       let slot = startMins;
-      let notifId = Math.abs(hashStr(a.id + slot)) % 2000000; // stable numeric id
+      let alarmId = Math.abs(hashStr(a.id + slot)) % 2000000;
 
       while (slot <= endMins) {
         const fireAt = new Date();
         fireAt.setHours(Math.floor(slot / 60), slot % 60, 0, 0);
 
-        // Only schedule future alarms
-        if (fireAt > now) {
-          notifications.push({
-            id: notifId,
-            title: `\u{1F514} ${a.groupName}`,
-            body: `Hi ${a.memberName}! Time to complete your ${a.groupName} tasks.`,
-            schedule: { at: fireAt, allowWhileIdle: true, exact: true },
-            channelId: 'alarm-v2',
-            actionTypeId: 'ALARM_ACTIONS',
-            extra: {
-              memberId: a.memberId,
-              memberName: a.memberName,
-              groupName: a.groupName,
-              assignmentId: a.id,
-              snoozeCount: a.snoozeCount || 0,
-              alarmInterval: a.alarmInterval || 5,
-            },
+        if (fireAt.getTime() > now) {
+          alarms.push({
+            id: alarmId,
+            triggerAt: fireAt.getTime(),
+            memberName:    a.memberName   || '',
+            groupName:     a.groupName    || 'tasks',
+            assignmentId:  String(a.id),
+            snoozeCount:   a.snoozeCount  || 0,
+            alarmInterval: interval,
           });
+          scheduledIds.push(alarmId);
         }
         slot += interval;
-        notifId++;
+        alarmId++;
       }
     }
 
-    // Always fire one test notification 30 seconds from now so you can
-    // immediately confirm the alarm pipeline works after installing.
-    const hasActive = assignments.some(
-      (a) => (a.state === 'assigned' || a.state === 'snoozed') && a.timeStart && a.timeEnd
-    );
-    if (hasActive) {
-      const testAt = new Date(Date.now() + 30_000);
-      notifications.push({
-        id: 9999999,
-        title: '\u{1F514} Alarm Test',
-        body: 'If you see this your alarms are working! You can dismiss it.',
-        schedule: { at: testAt, allowWhileIdle: true, exact: true },
-        channelId: 'alarm-v2',
-        actionTypeId: 'ALARM_ACTIONS',
-        extra: { memberName: '', groupName: 'Test', assignmentId: '', snoozeCount: 0, alarmInterval: 5 },
-      });
-    }
-
-    if (notifications.length > 0) {
-      await LocalNotifications.schedule({ notifications });
-      console.log('[LocalNotif] Scheduled', notifications.length, 'alarms (incl. test)');
+    // Cancel then reschedule
+    await AlarmPlugin.cancelAll({ ids: scheduledIds });
+    if (alarms.length > 0) {
+      await AlarmPlugin.schedule({ alarms });
+      console.log('[NativeAlarm] Scheduled', alarms.length, 'alarms');
     }
   } catch (e) {
-    console.warn('[LocalNotif] Schedule failed:', e);
+    console.warn('[NativeAlarm] Schedule failed:', e);
   }
 }
 
