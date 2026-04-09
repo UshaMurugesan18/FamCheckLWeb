@@ -6,10 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
@@ -27,7 +23,7 @@ import java.util.Locale;
  */
 public class AlarmService extends Service implements TextToSpeech.OnInitListener {
 
-    static final String CHANNEL_ID   = "family_alarm_v3";
+    static final String CHANNEL_ID   = "family_alarm_v4"; // v4 = silent channel (TTS only)
     static final String ACTION_SNOOZE = "com.familychecklist.app.SNOOZE";
     static final String ACTION_OPEN   = "com.familychecklist.app.OPEN";
     static final int    NOTIF_ID      = 8001;
@@ -82,20 +78,16 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = getSystemService(NotificationManager.class);
+            // Delete old channel that had alarm sound, then recreate silent
+            nm.deleteNotificationChannel("family_alarm_v3");
             if (nm.getNotificationChannel(CHANNEL_ID) != null) return;
-
-            Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            AudioAttributes audioAttrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build();
 
             NotificationChannel ch = new NotificationChannel(
                     CHANNEL_ID, "Family Task Alarms", NotificationManager.IMPORTANCE_HIGH);
             ch.setDescription("Rings when your tasks are due");
             ch.enableVibration(true);
             ch.setVibrationPattern(new long[]{0, 500, 300, 500});
-            ch.setSound(alarmSound, audioAttrs);
+            ch.setSound(null, null); // No ringtone — TTS is the only sound
             ch.enableLights(true);
             ch.setLightColor(0xFFFF4444);
             nm.createNotificationChannel(ch);

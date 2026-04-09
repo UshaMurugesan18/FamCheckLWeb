@@ -95,7 +95,7 @@ async function speak(text) {
     }
     return;
   }
-  // Web fallback — requires prior user gesture to unlock audio
+  // Web fallback
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   setTimeout(() => {
@@ -109,6 +109,14 @@ async function speak(text) {
     if (preferred) utt.voice = preferred;
     window.speechSynthesis.speak(utt);
   }, 100);
+}
+
+async function stopSpeaking() {
+  if (Capacitor.isNativePlatform()) {
+    try { await TextToSpeech.stop(); } catch (_) {}
+  } else if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 const GROUP_ICONS = {
@@ -639,7 +647,8 @@ export default function ReceiverHome() {
   const alarmUnlockedRef = useRef(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
   const alarmPopupRef = useRef(null);
-  const refreshFnRef = useRef(null); // set after subscribeToAssignmentsByMember is set up
+  const refreshFnRef = useRef(null);
+  const popupDismissedRef = useRef(false); // true briefly after popup close — blocks interval re-speak
 
   function updateAlarmPopup(popup) {
     alarmPopupRef.current = popup;
@@ -776,17 +785,16 @@ export default function ReceiverHome() {
   }
 
   function showAlarm(popup) {
+    // If popup was just dismissed, don't re-speak for 30 seconds
+    if (popupDismissedRef.current) return;
     updateAlarmPopup(popup);
-    // Native: TTS works without any user gesture — always speak
-    // Web: only speak if user already unlocked audio via a tap
     const { assignment, pendingTasks } = popup;
     if (Capacitor.isNativePlatform() || alarmUnlockedRef.current) {
       speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
     }
-    // Browser Notification for background/lock-screen (NOT available in Android WebView)
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const n = new Notification(`🔔 ${popup.assignment.groupName}`, {
-        body: popup.pendingTasks.map((t) => `• ${t.taskName}`).join('\n'),
+      const n = new Notification(`\uD83D\uDD14 ${popup.assignment.groupName}`, {
+        body: popup.pendingTasks.map((t) => `\u2022 ${t.taskName}`).join('\n'),
         icon: '/icon-192.png',
         tag: popup.assignment.id,
         renotify: true,
@@ -797,10 +805,12 @@ export default function ReceiverHome() {
 
   async function handlePopupSnooze(popup) {
     const { assignment } = popup;
+    stopSpeaking();
     updateAlarmPopup(null);
+    // Brief grace period so interval doesn't immediately re-fire TTS
+    popupDismissedRef.current = true;
+    setTimeout(() => { popupDismissedRef.current = false; }, 60_000);
     speak(`Snoozed. Alarm will ring again in ${assignment.alarmInterval || 5} minutes.`);
-    // Delegate to AssignmentCard's handleSnooze — it clears the interval, updates local state
-    // and calls the API, so the count decreases correctly on the next popup
     if (popup.snoozeCallback) {
       await popup.snoozeCallback();
     } else {
@@ -811,7 +821,11 @@ export default function ReceiverHome() {
 
   function handlePopupClose() {
     const popup = alarmPopup;
+    stopSpeaking();
     updateAlarmPopup(null);
+    // Grace period — interval won't re-speak for 30s after user closes popup
+    popupDismissedRef.current = true;
+    setTimeout(() => { popupDismissedRef.current = false; }, 30_000);
     if (popup) {
       const { assignment, pendingTasks } = popup;
       speak(`Hi ${assignment.memberName}, please complete: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
