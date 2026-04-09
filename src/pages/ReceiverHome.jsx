@@ -667,6 +667,14 @@ export default function ReceiverHome() {
     return () => clearTimeout(t);
   }, [memberId]);
 
+  // Request "Display over other apps" permission so alarm shows over WhatsApp etc.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    import('../plugins/AlarmPlugin.js').then(({ AlarmPlugin }) => {
+      AlarmPlugin.requestOverlayPermission().catch(() => {});
+    });
+  }, []);
+
   // Unlock web speechSynthesis on first tap — NOT needed on native (native TTS bypasses gesture restriction)
   useEffect(() => {
     if (Capacitor.isNativePlatform()) return;

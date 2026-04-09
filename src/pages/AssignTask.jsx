@@ -257,7 +257,7 @@ export default function AssignTask() {
         <div className={styles.alarmRow}>
           <span className={styles.alarmLabel}>⏱ Remind every</span>
           <div className={styles.alarmBtns}>
-            {[2, 5, 10, 15].map((min) => (
+            {[1, 2, 5, 10, 15].map((min) => (
               <button
                 key={min}
                 className={`${styles.alarmBtn} ${alarmInterval === min ? styles.alarmActive : ''}`}
