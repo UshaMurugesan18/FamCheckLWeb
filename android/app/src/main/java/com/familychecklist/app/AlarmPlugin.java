@@ -77,22 +77,23 @@ public class AlarmPlugin extends Plugin {
                 if (triggerAt <= now) continue;
 
                 int requestCode = a.getInteger("id");
-                Intent intent = new Intent(ctx, AlarmReceiver.class);
-                intent.putExtra("memberName",   a.getString("memberName"));
-                intent.putExtra("groupName",    a.getString("groupName"));
-                intent.putExtra("assignmentId", a.getString("assignmentId"));
-                intent.putExtra("snoozeCount",  a.getInteger("snoozeCount", 0));
-                intent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
-                intent.putExtra("taskList",     a.getString("taskList", ""));
 
-                PendingIntent pi = PendingIntent.getBroadcast(
-                        ctx, requestCode, intent,
+                // Point the alarm PendingIntent DIRECTLY to AlarmActivity.
+                // setAlarmClock() BAL exemption applies to this PendingIntent itself,
+                // so Android launches AlarmActivity full-screen on all versions (5-15).
+                Intent alarmIntent = new Intent(ctx, AlarmActivity.class);
+                alarmIntent.putExtra("memberName",   a.getString("memberName"));
+                alarmIntent.putExtra("groupName",    a.getString("groupName"));
+                alarmIntent.putExtra("assignmentId", a.getString("assignmentId"));
+                alarmIntent.putExtra("snoozeCount",  a.getInteger("snoozeCount", 0));
+                alarmIntent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
+                alarmIntent.putExtra("taskList",     a.getString("taskList", ""));
+                alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                PendingIntent pi = PendingIntent.getActivity(
+                        ctx, requestCode, alarmIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-                // setAlarmClock() gives Android 15 a BAL (Background Activity Launch)
-                // exemption — AlarmReceiver can then startActivity(AlarmActivity) directly,
-                // which works on ALL Android versions without needing fullScreenIntent.
-                // It also shows a clock icon in the status bar (same as AOSP clock app).
                 AlarmManager.AlarmClockInfo info =
                         new AlarmManager.AlarmClockInfo(triggerAt, showPi);
                 am.setAlarmClock(info, pi);
@@ -108,13 +109,15 @@ public class AlarmPlugin extends Plugin {
     public void cancelAll(PluginCall call) {
         JSArray ids = call.getArray("ids");
         if (ids == null) { call.resolve(); return; }
-        AlarmManager am = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+        Context ctx = getContext();
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         try {
             for (int i = 0; i < ids.length(); i++) {
                 int requestCode = ids.getInt(i);
-                Intent intent = new Intent(getContext(), AlarmReceiver.class);
-                PendingIntent pi = PendingIntent.getBroadcast(
-                        getContext(), requestCode, intent,
+                // Must use getActivity() to match how it was scheduled
+                Intent intent = new Intent(ctx, AlarmActivity.class);
+                PendingIntent pi = PendingIntent.getActivity(
+                        ctx, requestCode, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 am.cancel(pi);
             }

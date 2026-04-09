@@ -2,7 +2,6 @@ package com.familychecklist.app;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -54,6 +53,20 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // If user is actively using our app, don't interrupt them with alarm UI
+        if (MainActivity.isInForeground) {
+            finish();
+            return;
+        }
+
+        // Start silent keepalive service so process stays alive during alarm
+        Intent svc = new Intent(this, AlarmService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svc);
+        } else {
+            startService(svc);
+        }
+
         // Show over lock screen + turn screen on
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
@@ -70,11 +83,6 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_alarm);
-
-        // Cancel the HIGH-priority trigger notification immediately so the banner
-        // disappears as soon as AlarmActivity is visible on screen.
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (nm != null) nm.cancel(AlarmService.TRIGGER_ID);
 
         Intent intent = getIntent();
         memberName   = intent.getStringExtra("memberName");   if (memberName == null) memberName = "";
