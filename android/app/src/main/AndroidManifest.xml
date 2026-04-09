@@ -26,10 +26,10 @@
 
         </activity>
 
-        <!-- Native alarm receiver — triggered by AlarmManager -->
+        <!-- Native alarm receiver — triggered by AlarmManager (must be exported) -->
         <receiver
             android:name=".AlarmReceiver"
-            android:exported="false" />
+            android:exported="true" />
 
         <!-- Handles Snooze/Open button taps from alarm notification -->
         <receiver

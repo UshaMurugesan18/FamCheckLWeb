@@ -336,16 +336,17 @@ function AssignmentCard({ assignment: initAssignment, alarmUnlocked, onAlarm, al
     // Daily: never auto-deny on client side — server handles expiry
   }, [assignment]);
 
-  // Alarm — fires immediately on ASSIGNED, waits for interval on SNOOZED
+  // Alarm — on NATIVE the AlarmManager/AlarmActivity handles everything; skip JS popup
+  // On WEB show popup + speak via speechSynthesis
   useEffect(() => {
     alarmFiredRef.current = false;
     if (!assignment || !tasks.length) return;
+    if (Capacitor.isNativePlatform()) return; // native alarm handles it
     if (
       isInActiveWindow(assignment.timeStart, assignment.timeEnd) &&
       (assignment.state === STATES.ASSIGNED || assignment.state === STATES.SNOOZED)
     ) {
       const pending = tasks.filter((t) => !t.completed);
-      // Fire immediately only on ASSIGNED — SNOOZED must wait for the interval
       if (pending.length > 0 && !alarmFiredRef.current && assignment.state === STATES.ASSIGNED) {
         alarmFiredRef.current = true;
         onAlarm({ assignment, pendingTasks: pending, snoozeCallback: handleSnooze });

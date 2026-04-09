@@ -131,6 +131,7 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
 
     private void handleSnooze() {
         stopTts();
+        AlarmService.dismiss(this); // stop foreground service + clear notification
         int newCount = snoozeCount + 1;
         // Call backend API in background thread
         if (!assignmentId.isEmpty()) {
@@ -160,7 +161,7 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
 
     private void handleDismiss() {
         stopTts();
-        // Open the main app
+        AlarmService.dismiss(this); // stop foreground service + clear notification
         Intent open = new Intent(this, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(open);
