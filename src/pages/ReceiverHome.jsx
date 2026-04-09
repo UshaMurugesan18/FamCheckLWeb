@@ -655,6 +655,27 @@ export default function ReceiverHome() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // When notification arrives while app is OPEN (foreground) — speak immediately
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle;
+    LocalNotifications.addListener('localNotificationReceived', (notification) => {
+      const extra = notification?.extra || {};
+      if (extra.assignmentId === undefined) return; // skip test/other notifications
+      const popup = alarmPopupRef.current;
+      if (popup) {
+        const { assignment, pendingTasks } = popup;
+        speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+      } else {
+        const name = extra.memberName || 'there';
+        const group = extra.groupName || 'your tasks';
+        speak(`Hi ${name}, time to complete your ${group} tasks.`);
+      }
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Notification action buttons — SNOOZE and DONE work without opening app
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

@@ -126,37 +126,14 @@ export function subscribeToAssignmentsByFamily(familyId, callback) {
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
-/** Call once when receiver opens app. Requests permission + sets up alarm channel + action buttons. */
+/** Call once when receiver opens app. Requests permission only. Channel creation is in scheduleAlarms. */
 export async function registerPushSubscription(memberId) {
   if (Capacitor.isNativePlatform()) {
     try {
       const { display } = await LocalNotifications.requestPermissions();
       console.log('[LocalNotif] Permission:', display);
-
-      // High-importance channel — shows as heads-up pop-over even on lock screen
-      await LocalNotifications.createChannel({
-        id: 'alarm-channel',
-        name: 'Task Alarms',
-        importance: 5,            // IMPORTANCE_HIGH — pops over screen
-        description: 'Rings when your tasks are due',
-        sound: 'default',
-        vibration: true,
-        lights: true,
-        lightColor: '#FF4444',
-      });
-
-      // Snooze + Done buttons shown directly on the notification
-      await LocalNotifications.registerActionTypes({
-        types: [{
-          id: 'ALARM_ACTIONS',
-          actions: [
-            { id: 'SNOOZE', title: '😴 Snooze', foreground: true },
-            { id: 'DONE',   title: '✓ Open',   foreground: true },
-          ],
-        }],
-      });
     } catch (e) {
-      console.warn('[LocalNotif] Setup failed:', e);
+      console.warn('[LocalNotif] Permission request failed:', e);
     }
     return null;
   }
@@ -203,6 +180,28 @@ export async function scheduleAlarms(assignments) {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
+    // Always create channel FIRST — must exist before any notification is scheduled.
+    // Channel ID v2 forces recreation if old low-importance channel exists from a previous install.
+    await LocalNotifications.createChannel({
+      id: 'alarm-v2',
+      name: 'Task Alarms',
+      importance: 5,        // IMPORTANCE_HIGH — shows as heads-up banner
+      description: 'Rings when your tasks are due',
+      vibration: true,
+      lights: true,
+      lightColor: '#FF4444',
+    });
+
+    await LocalNotifications.registerActionTypes({
+      types: [{
+        id: 'ALARM_ACTIONS',
+        actions: [
+          { id: 'SNOOZE', title: '\u{1F634} Snooze', foreground: true },
+          { id: 'DONE',   title: '\u2713 Open',      foreground: true },
+        ],
+      }],
+    });
+
     // Cancel all previously scheduled alarms
     const pending = await LocalNotifications.getPending();
     if (pending.notifications.length > 0) {
@@ -235,11 +234,10 @@ export async function scheduleAlarms(assignments) {
         if (fireAt > now) {
           notifications.push({
             id: notifId,
-            title: `🔔 ${a.groupName}`,
+            title: `\u{1F514} ${a.groupName}`,
             body: `Hi ${a.memberName}! Time to complete your ${a.groupName} tasks.`,
-            schedule: { at: fireAt, allowWhileIdle: true },
-            sound: 'default',
-            channelId: 'alarm-channel',
+            schedule: { at: fireAt, allowWhileIdle: true, exact: true },
+            channelId: 'alarm-v2',
             actionTypeId: 'ALARM_ACTIONS',
             extra: {
               memberId: a.memberId,
@@ -256,9 +254,27 @@ export async function scheduleAlarms(assignments) {
       }
     }
 
+    // Always fire one test notification 30 seconds from now so you can
+    // immediately confirm the alarm pipeline works after installing.
+    const hasActive = assignments.some(
+      (a) => (a.state === 'assigned' || a.state === 'snoozed') && a.timeStart && a.timeEnd
+    );
+    if (hasActive) {
+      const testAt = new Date(Date.now() + 30_000);
+      notifications.push({
+        id: 9999999,
+        title: '\u{1F514} Alarm Test',
+        body: 'If you see this your alarms are working! You can dismiss it.',
+        schedule: { at: testAt, allowWhileIdle: true, exact: true },
+        channelId: 'alarm-v2',
+        actionTypeId: 'ALARM_ACTIONS',
+        extra: { memberName: '', groupName: 'Test', assignmentId: '', snoozeCount: 0, alarmInterval: 5 },
+      });
+    }
+
     if (notifications.length > 0) {
       await LocalNotifications.schedule({ notifications });
-      console.log('[LocalNotif] Scheduled', notifications.length, 'alarms');
+      console.log('[LocalNotif] Scheduled', notifications.length, 'alarms (incl. test)');
     }
   } catch (e) {
     console.warn('[LocalNotif] Schedule failed:', e);
