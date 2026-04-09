@@ -3,7 +3,6 @@ package com.familychecklist.app;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
@@ -18,26 +17,22 @@ import androidx.core.app.NotificationCompat;
  */
 public class AlarmService extends Service {
 
-    static final String CHANNEL_ID    = "family_alarm_v4";
-    static final String ACTION_SNOOZE = "com.familychecklist.app.SNOOZE";
-    static final String ACTION_OPEN   = "com.familychecklist.app.OPEN";
-    static final int    NOTIF_ID      = 8001;
+    static final String CHANNEL_ID = "family_alarm_v4";
+    static final int    NOTIF_ID   = 8001;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         createChannel();
 
-        // Show a minimal foreground notification (required by Android)
         Notification notif = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                 .setContentTitle("\uD83D\uDD14 Task Alarm")
-                .setContentText("Opening alarm screen…")
+                .setContentText("Opening alarm screen\u2026")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
         startForeground(NOTIF_ID, notif);
 
-        // Launch the full-screen AlarmActivity
         Intent activityIntent = new Intent(this, AlarmActivity.class);
         activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
                 Intent.FLAG_ACTIVITY_CLEAR_TOP |
@@ -47,7 +42,7 @@ public class AlarmService extends Service {
         }
         startActivity(activityIntent);
 
-        stopSelf(); // Service job done — activity takes over
+        stopSelf();
         return START_NOT_STICKY;
     }
 
@@ -63,147 +58,6 @@ public class AlarmService extends Service {
             ch.setVibrationPattern(new long[]{0, 400, 200, 400});
             nm.createNotificationChannel(ch);
         }
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
-}
-
-
-/**
- * Foreground service that:
- * 1. Shows a heads-up / full-screen notification with Snooze + Open buttons
- * 2. Speaks task list aloud using Android native TTS (works with screen off)
- * 3. Plays ringtone
- */
-public class AlarmService extends Service implements TextToSpeech.OnInitListener {
-
-    static final String CHANNEL_ID   = "family_alarm_v4"; // v4 = silent channel (TTS only)
-    static final String ACTION_SNOOZE = "com.familychecklist.app.SNOOZE";
-    static final String ACTION_OPEN   = "com.familychecklist.app.OPEN";
-    static final int    NOTIF_ID      = 8001;
-
-    private TextToSpeech tts;
-    private String pendingSpeech;
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && (ACTION_SNOOZE.equals(intent.getAction()) || ACTION_OPEN.equals(intent.getAction()))) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-
-        String memberName    = intent != null ? intent.getStringExtra("memberName")    : "";
-        String groupName     = intent != null ? intent.getStringExtra("groupName")     : "your tasks";
-        String assignmentId  = intent != null ? intent.getStringExtra("assignmentId")  : "";
-        int    snoozeCount   = intent != null ? intent.getIntExtra("snoozeCount", 0)   : 0;
-        int    alarmInterval = intent != null ? intent.getIntExtra("alarmInterval", 5) : 5;
-
-        if (memberName == null) memberName = "";
-        if (groupName == null)  groupName  = "your tasks";
-
-        createChannel();
-        Notification notif = buildNotification(memberName, groupName, assignmentId, snoozeCount, alarmInterval);
-        startForeground(NOTIF_ID, notif);
-
-        // Build TTS text
-        pendingSpeech = "Hi " + (memberName.isEmpty() ? "there" : memberName)
-                + ", time to complete your " + groupName + " tasks.";
-
-        tts = new TextToSpeech(this, this);
-        return START_NOT_STICKY;
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS && pendingSpeech != null) {
-            tts.setLanguage(Locale.US);
-            tts.setSpeechRate(0.85f);
-            tts.speak(pendingSpeech, TextToSpeech.QUEUE_FLUSH, null, "alarm_utt");
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String utteranceId) {}
-                @Override public void onDone(String utteranceId)  { stopSelf(); }
-                @Override public void onError(String utteranceId) { stopSelf(); }
-            });
-        } else {
-            stopSelf();
-        }
-    }
-
-    private void createChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager nm = getSystemService(NotificationManager.class);
-            // Delete old channel that had alarm sound, then recreate silent
-            nm.deleteNotificationChannel("family_alarm_v3");
-            if (nm.getNotificationChannel(CHANNEL_ID) != null) return;
-
-            NotificationChannel ch = new NotificationChannel(
-                    CHANNEL_ID, "Family Task Alarms", NotificationManager.IMPORTANCE_HIGH);
-            ch.setDescription("Rings when your tasks are due");
-            ch.enableVibration(true);
-            ch.setVibrationPattern(new long[]{0, 500, 300, 500});
-            ch.setSound(null, null); // No ringtone — TTS is the only sound
-            ch.enableLights(true);
-            ch.setLightColor(0xFFFF4444);
-            nm.createNotificationChannel(ch);
-        }
-    }
-
-    private Notification buildNotification(String memberName, String groupName,
-                                           String assignmentId, int snoozeCount, int alarmInterval) {
-        // Snooze action
-        Intent snoozeIntent = new Intent(this, AlarmActionReceiver.class);
-        snoozeIntent.setAction(ACTION_SNOOZE);
-        snoozeIntent.putExtra("assignmentId", assignmentId);
-        snoozeIntent.putExtra("snoozeCount", snoozeCount);
-        snoozeIntent.putExtra("alarmInterval", alarmInterval);
-        snoozeIntent.putExtra("memberName", memberName);
-        snoozeIntent.putExtra("groupName", groupName);
-        PendingIntent snoozePi = PendingIntent.getBroadcast(this, 1, snoozeIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Open app action
-        Intent openIntent = new Intent(this, MainActivity.class);
-        openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent openPi = PendingIntent.getActivity(this, 2, openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Full-screen intent — shows over lock screen
-        PendingIntent fullScreenPi = PendingIntent.getActivity(this, 3, openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        String name = memberName.isEmpty() ? "there" : memberName;
-        int snoozesLeft = 3 - snoozeCount;
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("\uD83D\uDD14 " + groupName + " — Time for your tasks!")
-                .setContentText("Hi " + name + "! Your tasks are waiting.")
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOngoing(true)
-                .setAutoCancel(false)
-                .setFullScreenIntent(fullScreenPi, true)
-                .setContentIntent(openPi);
-
-        if (snoozesLeft > 0) {
-            builder.addAction(android.R.drawable.ic_media_pause,
-                    "\uD83D\uDE34 Snooze " + alarmInterval + "min (" + snoozesLeft + " left)",
-                    snoozePi);
-        }
-        builder.addAction(android.R.drawable.ic_menu_view, "\u2713 Open App", openPi);
-
-        return builder.build();
-    }
-
-    @Override
-    public void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        super.onDestroy();
     }
 
     @Override
