@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.WindowManager;
@@ -69,16 +68,10 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // Show over other apps if permission granted (user must allow once in Settings)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                Settings.canDrawOverlays(this)) {
-            getWindow().setType(
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                    : WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-        }
-
         setContentView(R.layout.activity_alarm);
+        // Immediately swap to a silent background notification so the heads-up
+        // banner disappears and the user only sees this full-screen alarm UI.
+        AlarmService.makeSilent(this);
 
         Intent intent = getIntent();
         memberName   = intent.getStringExtra("memberName");   if (memberName == null) memberName = "";

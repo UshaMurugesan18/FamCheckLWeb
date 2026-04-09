@@ -29,12 +29,28 @@ public class AlarmPlugin extends Plugin {
 
     @PluginMethod
     public void requestOverlayPermission(PluginCall call) {
+        Context ctx = getContext();
+
+        // Android 14+: USE_FULL_SCREEN_INTENT requires explicit user grant.
+        // Without it, fullScreenIntent is demoted to a heads-up banner.
+        if (Build.VERSION.SDK_INT >= 34) {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null && !nm.canUseFullScreenIntent()) {
+                Intent fsi = new Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
+                        Uri.parse("package:" + ctx.getPackageName()));
+                fsi.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try { ctx.startActivity(fsi); } catch (Exception ignored) {}
+            }
+        }
+
+        // Display-over-other-apps permission (all Android versions)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                !Settings.canDrawOverlays(getContext())) {
+                !Settings.canDrawOverlays(ctx)) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getContext().getPackageName()));
+                    Uri.parse("package:" + ctx.getPackageName()));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(intent);
+            ctx.startActivity(intent);
         }
         call.resolve();
     }
