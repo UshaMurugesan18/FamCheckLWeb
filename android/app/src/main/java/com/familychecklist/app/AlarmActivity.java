@@ -69,9 +69,6 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_alarm);
-        // Immediately swap to a silent background notification so the heads-up
-        // banner disappears and the user only sees this full-screen alarm UI.
-        AlarmService.makeSilent(this);
 
         Intent intent = getIntent();
         memberName   = intent.getStringExtra("memberName");   if (memberName == null) memberName = "";
