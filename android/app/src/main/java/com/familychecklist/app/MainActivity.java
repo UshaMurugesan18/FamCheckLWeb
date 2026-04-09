@@ -14,13 +14,13 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         isInForeground = true;
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         isInForeground = false;
     }
