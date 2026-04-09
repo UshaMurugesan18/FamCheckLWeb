@@ -655,22 +655,32 @@ export default function ReceiverHome() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When user TAPS the notification — speak immediately using notification's own data (no race condition)
+  // Notification action buttons — SNOOZE and DONE work without opening app
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let handle;
-    LocalNotifications.addListener('localNotificationActionPerformed', (notifAction) => {
-      // Prefer popup task list if already shown; otherwise speak from notification extra data
-      const popup = alarmPopupRef.current;
-      if (popup) {
-        const { assignment, pendingTasks } = popup;
-        speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+    LocalNotifications.addListener('localNotificationActionPerformed', async (notifAction) => {
+      const { actionId, notification } = notifAction;
+      const extra = notification?.extra || {};
+
+      if (actionId === 'SNOOZE') {
+        // Snooze directly from notification bar — no need to open app
+        const newCount = (extra.snoozeCount || 0) + 1;
+        if (newCount <= MAX_SNOOZES && extra.assignmentId) {
+          try { await snoozeAssignment(extra.assignmentId, newCount); } catch (_) {}
+        }
+        speak(`Snoozed. Alarm will ring again in ${extra.alarmInterval || 5} minutes.`);
       } else {
-        // App was in background — popup not loaded yet, use data embedded in notification
-        const extra = notifAction?.notification?.extra || {};
-        const name = extra.memberName || 'there';
-        const group = extra.groupName || 'your tasks';
-        speak(`Hi ${name}, time to complete your ${group} tasks.`);
+        // User tapped notification body or Done — open app and speak
+        const popup = alarmPopupRef.current;
+        if (popup) {
+          const { assignment, pendingTasks } = popup;
+          speak(`Hi ${assignment.memberName}, time to complete your tasks: ${pendingTasks.map((t) => t.taskName).join(', ')}`);
+        } else {
+          const name = extra.memberName || 'there';
+          const group = extra.groupName || 'your tasks';
+          speak(`Hi ${name}, time to complete your ${group} tasks.`);
+        }
       }
     }).then((h) => { handle = h; });
     return () => { handle?.remove(); };

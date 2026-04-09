@@ -126,17 +126,39 @@ export function subscribeToAssignmentsByFamily(familyId, callback) {
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
-/** Call once when receiver opens app. Requests permission. */
+/** Call once when receiver opens app. Requests permission + sets up alarm channel + action buttons. */
 export async function registerPushSubscription(memberId) {
   if (Capacitor.isNativePlatform()) {
-    // Native Android — use local notifications (no server needed)
     try {
       const { display } = await LocalNotifications.requestPermissions();
       console.log('[LocalNotif] Permission:', display);
+
+      // High-importance channel — shows as heads-up pop-over even on lock screen
+      await LocalNotifications.createChannel({
+        id: 'alarm-channel',
+        name: 'Task Alarms',
+        importance: 5,            // IMPORTANCE_HIGH — pops over screen
+        description: 'Rings when your tasks are due',
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#FF4444',
+      });
+
+      // Snooze + Done buttons shown directly on the notification
+      await LocalNotifications.registerActionTypes({
+        types: [{
+          id: 'ALARM_ACTIONS',
+          actions: [
+            { id: 'SNOOZE', title: '😴 Snooze', foreground: true },
+            { id: 'DONE',   title: '✓ Open',   foreground: true },
+          ],
+        }],
+      });
     } catch (e) {
-      console.warn('[LocalNotif] Permission request failed:', e);
+      console.warn('[LocalNotif] Setup failed:', e);
     }
-    return null; // scheduling done separately via scheduleAlarms()
+    return null;
   }
 
   // Web fallback — keep web push for browser users
@@ -217,8 +239,16 @@ export async function scheduleAlarms(assignments) {
             body: `Hi ${a.memberName}! Time to complete your ${a.groupName} tasks.`,
             schedule: { at: fireAt, allowWhileIdle: true },
             sound: 'default',
-            actionTypeId: '',
-            extra: { memberId: a.memberId, memberName: a.memberName, groupName: a.groupName },
+            channelId: 'alarm-channel',
+            actionTypeId: 'ALARM_ACTIONS',
+            extra: {
+              memberId: a.memberId,
+              memberName: a.memberName,
+              groupName: a.groupName,
+              assignmentId: a.id,
+              snoozeCount: a.snoozeCount || 0,
+              alarmInterval: a.alarmInterval || 5,
+            },
           });
         }
         slot += interval;
