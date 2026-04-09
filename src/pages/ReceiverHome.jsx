@@ -18,6 +18,39 @@ import {
 } from '../api/api';
 import styles from './ReceiverHome.module.css';
 
+// ── Pull-to-refresh hook ────────────────────────────────────────────────────
+function usePullToRefresh(onRefresh) {
+  const startY = useRef(0);
+  const pulling = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    function onTouchStart(e) {
+      if (window.scrollY === 0) {
+        startY.current = e.touches[0].clientY;
+        pulling.current = true;
+      }
+    }
+    function onTouchEnd(e) {
+      if (!pulling.current) return;
+      const dy = e.changedTouches[0].clientY - startY.current;
+      pulling.current = false;
+      if (dy > 70) {
+        setRefreshing(true);
+        Promise.resolve(onRefresh()).finally(() => setRefreshing(false));
+      }
+    }
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [onRefresh]);
+
+  return refreshing;
+}
+
 const ALARM_INTERVAL_MS = 5 * 60 * 1000;
 
 function todayStr() {
@@ -603,14 +636,20 @@ export default function ReceiverHome() {
   const [apiLoaded, setApiLoaded] = useState(false); // true after first API response — prevents premature "No tasks"
   const initialLoadDone = useRef(!loading); // already loaded if cache hit
   const [alarmUnlocked, setAlarmUnlocked] = useState(false);
-  const alarmUnlockedRef = useRef(false); // ref so timers/callbacks always see latest value
+  const alarmUnlockedRef = useRef(false);
   const [alarmPopup, setAlarmPopup] = useState(null);
-  const alarmPopupRef = useRef(null); // ref — always current, used by notification listener
+  const alarmPopupRef = useRef(null);
+  const refreshFnRef = useRef(null); // set after subscribeToAssignmentsByMember is set up
 
   function updateAlarmPopup(popup) {
     alarmPopupRef.current = popup;
     setAlarmPopup(popup);
   }
+
+  // Pull-to-refresh
+  const refreshing = usePullToRefresh(() => {
+    if (refreshFnRef.current) return refreshFnRef.current();
+  });
 
   // Register for background push notifications (delayed so it doesn't block initial render)
   useEffect(() => {
@@ -809,7 +848,6 @@ export default function ReceiverHome() {
       setAssignments(active);
       setAllAssignments(all);
       scheduleAlarms(active);
-      // Save to cache for next open
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ active, all })); } catch (_) {}
       setApiLoaded(true);
       if (!initialLoadDone.current) {
@@ -823,6 +861,23 @@ export default function ReceiverHome() {
         setLoading(false);
       }
     });
+
+    // Expose manual refresh function for pull-to-refresh
+    refreshFnRef.current = () => {
+      return new Promise((resolve) => {
+        const u = subscribeToAssignmentsByMember(memberId, (all) => {
+          const active = filterActive(all);
+          setAssignments(active);
+          setAllAssignments(all);
+          scheduleAlarms(active);
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ active, all })); } catch (_) {}
+          setApiLoaded(true);
+          u();
+          resolve();
+        }, () => { u(); resolve(); });
+      });
+    };
+
     return () => unsub();
   }, [memberId]);
 
@@ -871,6 +926,9 @@ export default function ReceiverHome() {
   return (
     <div className={styles.container}>
       <AlarmPopup popup={alarmPopup} onSnooze={handlePopupSnooze} onClose={handlePopupClose} />
+      {refreshing && (
+        <div className={styles.pullRefresh}>↻ Refreshing…</div>
+      )}
       <div className={styles.pageHeader}>
         <h2 className={styles.pageTitle}>My Tasks</h2>
         <p className={styles.pageSubtitle}>Tap a group to expand</p>

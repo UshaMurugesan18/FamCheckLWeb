@@ -5,6 +5,15 @@
   padding: 1.5rem 1.25rem 5rem;
   background: var(--color-bg);
 }
+.pullRefresh {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-primary, #4f63d2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.25rem;
+}
 
 .center {
   min-height: 100vh;
