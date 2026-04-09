@@ -109,7 +109,7 @@ public class AlarmService extends Service {
         nm.notify(NOTIF_ID, silent);
     }
 
-    private void createChannelss() {
+    private void createChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = getSystemService(NotificationManager.class);
             nm.deleteNotificationChannel("family_alarm_v3");
