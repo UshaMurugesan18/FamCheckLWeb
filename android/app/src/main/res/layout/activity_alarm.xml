@@ -49,7 +49,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tasks to complete:"
+            android:text="📋 Tasks to complete:"
             android:textColor="#8888AA"
             android:textSize="13sp"
             android:layout_marginBottom="8dp" />
@@ -59,8 +59,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:lineSpacingExtra="6dp" />
+            android:textSize="17sp"
+            android:lineSpacingExtra="8dp"
+            android:fontFamily="sans-serif-medium" />
 
     </LinearLayout>
 

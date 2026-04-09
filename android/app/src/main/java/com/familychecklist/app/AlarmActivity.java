@@ -69,7 +69,18 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
         tvGreeting.setText("Hi " + (memberName.isEmpty() ? "there" : memberName) + "! Time to complete your tasks.");
 
         TextView tvTasks = findViewById(R.id.taskList);
-        tvTasks.setText(taskListStr.isEmpty() ? groupName : taskListStr);
+        if (taskListStr != null && !taskListStr.isEmpty()) {
+            // Show each task on its own line with bullet
+            String[] tasks = taskListStr.split(",\\s*");
+            StringBuilder sb = new StringBuilder();
+            for (String task : tasks) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append("☐  ").append(task.trim());
+            }
+            tvTasks.setText(sb.toString());
+        } else {
+            tvTasks.setText(groupName);
+        }
 
         int snoozesLeft = MAX_SNOOZES - snoozeCount;
         TextView tvSnoozesLeft = findViewById(R.id.snoozesLeft);
@@ -95,11 +106,26 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            tts.setLanguage(Locale.US);
+            // Prefer Indian English accent; fall back to any English
+            int result = tts.setLanguage(new Locale("en", "IN"));
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                tts.setLanguage(Locale.US);
+            }
             tts.setSpeechRate(0.85f);
-            String speech = "Hi " + (memberName.isEmpty() ? "there" : memberName)
-                    + ", time to complete your " + groupName + " tasks.";
-            tts.speak(speech, TextToSpeech.QUEUE_FLUSH, null, "alarm");
+
+            String name = memberName.isEmpty() ? "there" : memberName;
+            String taskListStr = getIntent().getStringExtra("taskList");
+
+            StringBuilder speech = new StringBuilder();
+            speech.append("Hi ").append(name).append(", time to complete your ").append(groupName).append(" tasks.");
+
+            if (taskListStr != null && !taskListStr.isEmpty()) {
+                speech.append(" Your tasks are: ");
+                // Replace commas with pauses for natural reading
+                speech.append(taskListStr.replace(",", ","));
+            }
+
+            tts.speak(speech.toString(), TextToSpeech.QUEUE_FLUSH, null, "alarm");
         }
     }
 

@@ -208,6 +208,19 @@ export async function scheduleAlarms(assignments) {
         fireAt.setHours(Math.floor(slot / 60), slot % 60, 0, 0);
 
         if (fireAt.getTime() > now) {
+          // Read task names from localStorage cache (written by AssignmentCard)
+          let taskList = '';
+          try {
+            const cached = localStorage.getItem(`fc_tasks_${a.id}`);
+            if (cached) {
+              const tasks = JSON.parse(cached);
+              const pending = tasks.filter(t => !t.completed);
+              taskList = pending.length > 0
+                ? pending.map(t => t.taskName).join(', ')
+                : tasks.map(t => t.taskName).join(', ');
+            }
+          } catch (_) {}
+
           alarms.push({
             id: alarmId,
             triggerAt: fireAt.getTime(),
@@ -216,6 +229,7 @@ export async function scheduleAlarms(assignments) {
             assignmentId:  String(a.id),
             snoozeCount:   a.snoozeCount  || 0,
             alarmInterval: interval,
+            taskList,
           });
           scheduledIds.push(alarmId);
         }
