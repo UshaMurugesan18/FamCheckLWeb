@@ -60,8 +60,15 @@ public class AlarmPlugin extends Plugin {
         JSArray alarms = call.getArray("alarms");
         if (alarms == null) { call.resolve(); return; }
 
-        AlarmManager am = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+        Context ctx = getContext();
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         long now = System.currentTimeMillis();
+
+        // showIntent — opens MainActivity when user taps the alarm clock icon in status bar
+        Intent showIntentRaw = new Intent(ctx, MainActivity.class);
+        showIntentRaw.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent showPi = PendingIntent.getActivity(ctx, 0, showIntentRaw,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         try {
             for (int i = 0; i < alarms.length(); i++) {
@@ -70,7 +77,7 @@ public class AlarmPlugin extends Plugin {
                 if (triggerAt <= now) continue;
 
                 int requestCode = a.getInteger("id");
-                Intent intent = new Intent(getContext(), AlarmReceiver.class);
+                Intent intent = new Intent(ctx, AlarmReceiver.class);
                 intent.putExtra("memberName",   a.getString("memberName"));
                 intent.putExtra("groupName",    a.getString("groupName"));
                 intent.putExtra("assignmentId", a.getString("assignmentId"));
@@ -79,18 +86,16 @@ public class AlarmPlugin extends Plugin {
                 intent.putExtra("taskList",     a.getString("taskList", ""));
 
                 PendingIntent pi = PendingIntent.getBroadcast(
-                        getContext(), requestCode, intent,
+                        ctx, requestCode, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (am.canScheduleExactAlarms()) {
-                        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                    } else {
-                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                    }
-                } else {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi);
-                }
+                // setAlarmClock() gives Android 15 a BAL (Background Activity Launch)
+                // exemption — AlarmReceiver can then startActivity(AlarmActivity) directly,
+                // which works on ALL Android versions without needing fullScreenIntent.
+                // It also shows a clock icon in the status bar (same as AOSP clock app).
+                AlarmManager.AlarmClockInfo info =
+                        new AlarmManager.AlarmClockInfo(triggerAt, showPi);
+                am.setAlarmClock(info, pi);
             }
         } catch (Exception e) {
             call.reject("Schedule failed: " + e.getMessage());
