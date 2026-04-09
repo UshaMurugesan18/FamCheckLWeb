@@ -46,6 +46,7 @@ public class AlarmPlugin extends Plugin {
                 intent.putExtra("assignmentId", a.getString("assignmentId"));
                 intent.putExtra("snoozeCount",  a.getInteger("snoozeCount", 0));
                 intent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
+                intent.putExtra("taskList",     a.getString("taskList", ""));
 
                 PendingIntent pi = PendingIntent.getBroadcast(
                         getContext(), requestCode, intent,

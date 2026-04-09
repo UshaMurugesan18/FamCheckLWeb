@@ -36,11 +36,22 @@
             android:name=".AlarmActionReceiver"
             android:exported="false" />
 
-        <!-- Foreground service — plays TTS + shows alarm notification -->
+        <!-- Foreground service — launches AlarmActivity when alarm fires -->
         <service
             android:name=".AlarmService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
+
+        <!-- Full-screen alarm UI — shows over lock screen like a real alarm clock -->
+        <activity
+            android:name=".AlarmActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

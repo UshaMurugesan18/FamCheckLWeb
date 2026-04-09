@@ -7,8 +7,7 @@ import android.os.Build;
 
 /**
  * Receives alarm broadcasts from AlarmManager.
- * Starts AlarmService as a foreground service so it can run TTS and show
- * a full-screen notification even when the phone is locked/screen off.
+ * Starts AlarmService as a foreground service which then launches AlarmActivity.
  */
 public class AlarmReceiver extends BroadcastReceiver {
     @Override
