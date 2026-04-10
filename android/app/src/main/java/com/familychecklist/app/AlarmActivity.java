@@ -64,8 +64,10 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
         NotificationManager nm2 = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (nm2 != null) nm2.cancel(AlarmService.TRIGGER_ID);
 
-        // Start silent keepalive service so process stays alive during alarm
+        // Start silent keepalive service — pass isKeepalive=true so AlarmService
+        // does NOT re-trigger the alarm or post another notification
         Intent svc = new Intent(this, AlarmService.class);
+        svc.putExtra("isKeepalive", true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(svc);
         } else {
