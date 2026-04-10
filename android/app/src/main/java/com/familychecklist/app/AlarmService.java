@@ -105,7 +105,8 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
                 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && Settings.canDrawOverlays(this)) {
             // ── SCREEN ON ─────────────────────────────────────────────────────
-            // WindowManager overlay covers ANY app (YouTube, Chrome, etc.)
+            // Start TTS immediately (async init) so voice is ready by the time overlay shows
+            tts = new TextToSpeech(this, this);
             showWindowOverlay();
         } else {
             // ── SCREEN OFF ────────────────────────────────────────────────────
@@ -193,10 +194,7 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
             windowManager.addView(overlayView, params);
         } catch (Exception e) {
             overlayView = null;
-            return;
         }
-
-        tts = new TextToSpeech(this, this);
     }
 
     @Override
