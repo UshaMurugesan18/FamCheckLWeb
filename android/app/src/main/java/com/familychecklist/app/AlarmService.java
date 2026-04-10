@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -33,7 +34,13 @@ public class AlarmService extends Service {
                 .setOngoing(true)
                 .setSilent(true)
                 .build();
-        startForeground(NOTIF_ID, notif);
+        // Android 14+ requires specifying the foreground service type in startForeground()
+        // otherwise throws MissingForegroundServiceTypeException and crashes
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34+
+            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIF_ID, notif);
+        }
         return START_NOT_STICKY;
     }
 
@@ -49,11 +56,11 @@ public class AlarmService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = getSystemService(NotificationManager.class);
-            // Clean up old channels
+            // Clean up old channels only — do NOT delete our own CHANNEL_ID
             for (String old : new String[]{
                     "family_alarm_v3","family_alarm_v4","family_alarm_v5","family_alarm_v6",
                     "family_alarm_silent","family_alarm_silent_v1",
-                    "family_alarm_high_v1","family_alarm_low_v1"}) {
+                    "family_alarm_high_v1"}) {
                 nm.deleteNotificationChannel(old);
             }
             NotificationChannel ch = new NotificationChannel(
