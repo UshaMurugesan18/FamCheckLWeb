@@ -31,6 +31,16 @@
             android:name=".AlarmReceiver"
             android:exported="true" />
 
+        <!-- Reschedules alarms after phone reboot (AlarmManager clears on reboot) -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
         <!-- Handles Snooze/Open button taps from alarm notification -->
         <receiver
             android:name=".AlarmActionReceiver"

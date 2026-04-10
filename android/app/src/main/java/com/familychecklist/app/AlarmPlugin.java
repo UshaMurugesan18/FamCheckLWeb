@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -15,6 +16,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -55,6 +57,10 @@ public class AlarmPlugin extends Plugin {
         call.resolve();
     }
 
+    static final String PREFS_NAME = "fc_alarms";
+    static final String PREFS_KEY  = "alarm_list";
+
+    /** Schedule alarms and persist them so BootReceiver can reschedule after reboot. */
     @PluginMethod
     public void schedule(PluginCall call) {
         JSArray alarms = call.getArray("alarms");
@@ -64,11 +70,18 @@ public class AlarmPlugin extends Plugin {
         AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         long now = System.currentTimeMillis();
 
-        // showIntent — opens MainActivity when user taps the alarm clock icon in status bar
         Intent showIntentRaw = new Intent(ctx, MainActivity.class);
         showIntentRaw.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent showPi = PendingIntent.getActivity(ctx, 0, showIntentRaw,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // Save alarms to SharedPreferences for BootReceiver to reschedule after reboot
+        try {
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+               .edit()
+               .putString(PREFS_KEY, alarms.toString())
+               .apply();
+        } catch (Exception ignored) {}
 
         try {
             for (int i = 0; i < alarms.length(); i++) {
@@ -85,7 +98,6 @@ public class AlarmPlugin extends Plugin {
                 intent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
                 intent.putExtra("taskList",     a.getString("taskList", ""));
 
-                // getBroadcast so AlarmReceiver gets the BAL token from setAlarmClock
                 PendingIntent pi = PendingIntent.getBroadcast(
                         ctx, requestCode, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
