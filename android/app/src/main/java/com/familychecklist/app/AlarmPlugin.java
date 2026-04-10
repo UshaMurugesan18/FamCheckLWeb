@@ -77,21 +77,17 @@ public class AlarmPlugin extends Plugin {
                 if (triggerAt <= now) continue;
 
                 int requestCode = a.getInteger("id");
+                Intent intent = new Intent(ctx, AlarmReceiver.class);
+                intent.putExtra("memberName",   a.getString("memberName"));
+                intent.putExtra("groupName",    a.getString("groupName"));
+                intent.putExtra("assignmentId", a.getString("assignmentId"));
+                intent.putExtra("snoozeCount",  a.getInteger("snoozeCount", 0));
+                intent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
+                intent.putExtra("taskList",     a.getString("taskList", ""));
 
-                // Point the alarm PendingIntent DIRECTLY to AlarmActivity.
-                // setAlarmClock() BAL exemption applies to this PendingIntent itself,
-                // so Android launches AlarmActivity full-screen on all versions (5-15).
-                Intent alarmIntent = new Intent(ctx, AlarmActivity.class);
-                alarmIntent.putExtra("memberName",   a.getString("memberName"));
-                alarmIntent.putExtra("groupName",    a.getString("groupName"));
-                alarmIntent.putExtra("assignmentId", a.getString("assignmentId"));
-                alarmIntent.putExtra("snoozeCount",  a.getInteger("snoozeCount", 0));
-                alarmIntent.putExtra("alarmInterval",a.getInteger("alarmInterval", 5));
-                alarmIntent.putExtra("taskList",     a.getString("taskList", ""));
-                alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-                PendingIntent pi = PendingIntent.getActivity(
-                        ctx, requestCode, alarmIntent,
+                // getBroadcast so AlarmReceiver gets the BAL token from setAlarmClock
+                PendingIntent pi = PendingIntent.getBroadcast(
+                        ctx, requestCode, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
                 AlarmManager.AlarmClockInfo info =
@@ -114,9 +110,8 @@ public class AlarmPlugin extends Plugin {
         try {
             for (int i = 0; i < ids.length(); i++) {
                 int requestCode = ids.getInt(i);
-                // Must use getActivity() to match how it was scheduled
-                Intent intent = new Intent(ctx, AlarmActivity.class);
-                PendingIntent pi = PendingIntent.getActivity(
+                Intent intent = new Intent(ctx, AlarmReceiver.class);
+                PendingIntent pi = PendingIntent.getBroadcast(
                         ctx, requestCode, intent,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 am.cancel(pi);

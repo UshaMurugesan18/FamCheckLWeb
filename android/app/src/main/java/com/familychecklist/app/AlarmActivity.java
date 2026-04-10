@@ -2,6 +2,7 @@ package com.familychecklist.app;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,6 +59,10 @@ public class AlarmActivity extends Activity implements TextToSpeech.OnInitListen
             finish();
             return;
         }
+
+        // Cancel the fullScreenIntent trigger notification — banner disappears immediately
+        NotificationManager nm2 = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm2 != null) nm2.cancel(AlarmService.TRIGGER_ID);
 
         // Start silent keepalive service so process stays alive during alarm
         Intent svc = new Intent(this, AlarmService.class);
